@@ -12,6 +12,15 @@ const nextConfig: NextConfig = {
       '@llm': path.resolve(__dirname, '../../../llm'),
       '@domains': path.resolve(__dirname, '../../../domains'),
     };
+
+    // The engine and llm packages use nodenext module resolution with .js
+    // extensions in imports (e.g. './decay.js' → './decay.ts'). Tell webpack
+    // to try .ts/.tsx before .js so these resolve correctly under bundler mode.
+    config.resolve.extensionAlias = {
+      ...config.resolve.extensionAlias,
+      '.js': ['.ts', '.tsx', '.js'],
+    };
+
     return config;
   },
 };
