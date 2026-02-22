@@ -2,7 +2,7 @@
 
 ## Current Task
 
-004 — Conversation UI
+005 — Conversation Loop (Backend)
 
 ## Quick Status
 
@@ -21,7 +21,7 @@
 | 001 | Next.js Project Setup | Done |
 | 002 | Networking Domain Package | Done |
 | 003 | App Shell & Layout | Done |
-| 004 | Conversation UI | Pending |
+| 004 | Conversation UI | Done |
 | 005 | Conversation Loop (Backend) | Pending |
 | 006 | Grill Mode | Pending |
 | 007 | Territory List View (MVP Map) | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-003 completed. Three-panel layout with collapsible map/margin, responsive breakpoints, bottom bar navigation.
+004 completed. Two-voice conversation UI with serif/mono typography, trust annotations, auto-scroll, input with submit behavior.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 004 — Conversation UI.
+Start 005 — Conversation loop backend.
