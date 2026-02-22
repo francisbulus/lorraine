@@ -2,7 +2,7 @@
 
 ## Current Task
 
-007 — Territory List View (MVP Map)
+008 — Margin Panel
 
 ## Quick Status
 
@@ -24,7 +24,7 @@
 | 004 | Conversation UI | Done |
 | 005 | Conversation Loop (Backend) | Done |
 | 006 | Grill Mode | Done |
-| 007 | Territory List View (MVP Map) | Pending |
+| 007 | Territory List View (MVP Map) | Done |
 | 008 | Margin Panel | Pending |
 | 009 | Event Visibility & Challengeability | Pending |
 | 010 | Session Management | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-006 completed. Grill engine: adaptive difficulty axis selection (recall→inference→transfer→discrimination), target selection (contested > claimed > stale > untested), self-verification detection, LLM interpretation, recordVerification integration. Conversation loop extended with grill state tracking. 97 terrain tests, 79 engine tests, zero regressions.
+007 completed. Territory list view: TrustGlyph (● ◐ ○ ◌ ◦), ProgressBar with smooth transitions, TerritoryCard with all design system styling, territory-state aggregation from bulk trust state. MapPanel updated. 119 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 007 — Territory list view (MVP map).
+Start 008 — Margin panel.
