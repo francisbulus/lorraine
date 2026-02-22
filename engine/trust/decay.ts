@@ -14,7 +14,7 @@ import type { Store } from '../store/interface.js';
 const MS_PER_DAY = 86_400_000;
 
 export interface DecayTrustInput {
-  learnerId: string;
+  personId: string;
   asOfTimestamp?: number;
 }
 
@@ -68,7 +68,7 @@ export function decayTrust(
   input: DecayTrustInput
 ): DecayResult[] {
   const asOf = input.asOfTimestamp ?? Date.now();
-  const allStates = store.getAllTrustStates(input.learnerId);
+  const allStates = store.getAllTrustStates(input.personId);
   const results: DecayResult[] = [];
 
   for (const state of allStates) {

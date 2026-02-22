@@ -9,7 +9,7 @@ import { createNode } from '../../../engine/graph/nodes.js';
 import { createEdge } from '../../../engine/graph/edges.js';
 import type { Store } from '../../../engine/store/interface.js';
 
-export const LEARNER_ID = 'learner_ade';
+export const PERSON_ID = 'person_ade';
 
 export const CONCEPTS = {
   A: { id: 'concept_a', name: 'Reliable Delivery', domain: 'networking', territory: 'tcp-fundamentals' },

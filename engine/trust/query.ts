@@ -6,7 +6,7 @@ import type { Store } from '../store/interface.js';
 import { computeDecayedConfidence } from './decay.js';
 
 export interface GetTrustStateInput {
-  learnerId: string;
+  personId: string;
   conceptId: string;
   asOfTimestamp?: number;
 }
@@ -16,14 +16,14 @@ export function getTrustState(
   input: GetTrustStateInput
 ): TrustState {
   const asOf = input.asOfTimestamp ?? Date.now();
-  const stored = store.getTrustState(input.learnerId, input.conceptId);
-  const history = store.getVerificationHistory(input.learnerId, input.conceptId);
+  const stored = store.getTrustState(input.personId, input.conceptId);
+  const history = store.getVerificationHistory(input.personId, input.conceptId);
 
   if (!stored) {
     // No trust state exists — untested.
     return {
       conceptId: input.conceptId,
-      learnerId: input.learnerId,
+      personId: input.personId,
       level: 'untested',
       confidence: 0,
       verificationHistory: [],
@@ -48,7 +48,7 @@ export function getTrustState(
 
   return {
     conceptId: stored.conceptId,
-    learnerId: stored.learnerId,
+    personId: stored.personId,
     level: stored.level,
     confidence: stored.confidence,
     verificationHistory: history,

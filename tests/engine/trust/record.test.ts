@@ -3,7 +3,7 @@
 // Test: Contradictory signals across modalities produce a contested state.
 
 import { describe, it, expect, afterEach } from 'vitest';
-import { createTestGraph, LEARNER_ID, CONCEPTS } from './helpers.js';
+import { createTestGraph, PERSON_ID, CONCEPTS } from './helpers.js';
 import { recordVerification } from '../../../engine/trust/record.js';
 import { getTrustState } from '../../../engine/trust/query.js';
 import type { Store } from '../../../engine/store/interface.js';
@@ -20,7 +20,7 @@ describe('recordVerification', () => {
     const now = Date.now();
 
     const result = recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -40,7 +40,7 @@ describe('recordVerification', () => {
     const now = Date.now();
 
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       modality: 'sandbox:execution',
       result: 'demonstrated',
@@ -49,7 +49,7 @@ describe('recordVerification', () => {
     });
 
     const state = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       asOfTimestamp: now,
     });
@@ -64,7 +64,7 @@ describe('recordVerification', () => {
     store = createTestGraph();
 
     const state = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.E.id,
     });
 
@@ -82,7 +82,7 @@ describe('cross-modality verification', () => {
 
     // Single modality on concept A.
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:recall',
       result: 'demonstrated',
@@ -91,14 +91,14 @@ describe('cross-modality verification', () => {
     });
 
     const singleModalityState = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       asOfTimestamp: now,
     });
 
     // Multiple modalities on concept B.
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -106,7 +106,7 @@ describe('cross-modality verification', () => {
       timestamp: now,
     });
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       modality: 'sandbox:execution',
       result: 'demonstrated',
@@ -114,7 +114,7 @@ describe('cross-modality verification', () => {
       timestamp: now + 1,
     });
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       modality: 'write:explanation',
       result: 'demonstrated',
@@ -123,7 +123,7 @@ describe('cross-modality verification', () => {
     });
 
     const multiModalityState = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       asOfTimestamp: now + 2,
     });
@@ -141,7 +141,7 @@ describe('contested state', () => {
 
     // First: demonstrate understanding through one modality.
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.C.id,
       modality: 'grill:recall',
       result: 'demonstrated',
@@ -151,7 +151,7 @@ describe('contested state', () => {
 
     // Then: fail in a different context.
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.C.id,
       modality: 'grill:transfer',
       result: 'failed',
@@ -160,7 +160,7 @@ describe('contested state', () => {
     });
 
     const state = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.C.id,
       asOfTimestamp: now + 1000,
     });

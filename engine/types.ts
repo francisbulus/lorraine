@@ -40,7 +40,7 @@ export type VerificationResult = 'demonstrated' | 'failed' | 'partial';
 
 export interface VerificationEvent {
   id: string;
-  learnerId: string;
+  personId: string;
   conceptId: string;
   modality: Modality;
   result: VerificationResult;
@@ -54,7 +54,7 @@ export type TrustLevel = 'verified' | 'inferred' | 'untested' | 'contested';
 
 export interface TrustState {
   conceptId: string;
-  learnerId: string;
+  personId: string;
   level: TrustLevel;
   confidence: number; // 0.0 – 1.0
   verificationHistory: VerificationEvent[];

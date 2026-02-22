@@ -2,7 +2,7 @@
 // verification history, modalities tested, and decayed confidence.
 
 import { describe, it, expect, afterEach } from 'vitest';
-import { createTestGraph, LEARNER_ID, CONCEPTS } from './helpers.js';
+import { createTestGraph, PERSON_ID, CONCEPTS } from './helpers.js';
 import { recordVerification } from '../../../engine/trust/record.js';
 import { getTrustState } from '../../../engine/trust/query.js';
 import { propagateTrust } from '../../../engine/trust/propagate.js';
@@ -24,7 +24,7 @@ describe('getTrustState — full trust object', () => {
 
     // Record multiple verifications across modalities.
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -33,7 +33,7 @@ describe('getTrustState — full trust object', () => {
     });
 
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'sandbox:execution',
       result: 'demonstrated',
@@ -44,14 +44,14 @@ describe('getTrustState — full trust object', () => {
     // Query the state after some time has passed.
     const futureTimestamp = now + 7 * MS_PER_DAY;
     const state = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       asOfTimestamp: futureTimestamp,
     });
 
     // Full trust object contract from engine-api.md:
     expect(state.conceptId).toBe(CONCEPTS.A.id);
-    expect(state.learnerId).toBe(LEARNER_ID);
+    expect(state.personId).toBe(PERSON_ID);
     expect(state.level).toBe('verified');
     expect(state.confidence).toBeGreaterThan(0);
     expect(state.confidence).toBeLessThanOrEqual(1);
@@ -83,7 +83,7 @@ describe('getTrustState — full trust object', () => {
 
     // Verify A and propagate to B.
     const result = recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -93,13 +93,13 @@ describe('getTrustState — full trust object', () => {
 
     const event: VerificationEvent = result.verificationHistory[0]!;
     propagateTrust(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       sourceConceptId: CONCEPTS.A.id,
       verificationEvent: event,
     });
 
     const bState = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       asOfTimestamp: now,
     });
@@ -113,7 +113,7 @@ describe('getTrustState — full trust object', () => {
     store = createTestGraph();
 
     const state = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.E.id,
     });
 

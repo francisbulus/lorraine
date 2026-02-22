@@ -3,7 +3,7 @@
 // Test: Failure propagates more aggressively than success.
 
 import { describe, it, expect, afterEach } from 'vitest';
-import { createTestGraph, LEARNER_ID, CONCEPTS } from './helpers.js';
+import { createTestGraph, PERSON_ID, CONCEPTS } from './helpers.js';
 import { recordVerification } from '../../../engine/trust/record.js';
 import { propagateTrust } from '../../../engine/trust/propagate.js';
 import { getTrustState } from '../../../engine/trust/query.js';
@@ -23,7 +23,7 @@ describe('trust propagation', () => {
 
     // Verify concept A.
     const trustState = recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -36,7 +36,7 @@ describe('trust propagation', () => {
 
     // Propagate.
     const results = propagateTrust(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       sourceConceptId: CONCEPTS.A.id,
       verificationEvent: event,
     });
@@ -46,7 +46,7 @@ describe('trust propagation', () => {
 
     // Check concept B — must be inferred, NEVER verified.
     const bState = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       asOfTimestamp: now,
     });
@@ -67,7 +67,7 @@ describe('trust propagation', () => {
 
     // Verify concept A.
     const trustState = recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -78,15 +78,15 @@ describe('trust propagation', () => {
     const event: VerificationEvent = trustState.verificationHistory[0]!;
 
     propagateTrust(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       sourceConceptId: CONCEPTS.A.id,
       verificationEvent: event,
     });
 
     // Get confidence at each distance from A.
-    const bState = getTrustState(store, { learnerId: LEARNER_ID, conceptId: CONCEPTS.B.id, asOfTimestamp: now });
-    const cState = getTrustState(store, { learnerId: LEARNER_ID, conceptId: CONCEPTS.C.id, asOfTimestamp: now });
-    const dState = getTrustState(store, { learnerId: LEARNER_ID, conceptId: CONCEPTS.D.id, asOfTimestamp: now });
+    const bState = getTrustState(store, { personId: PERSON_ID, conceptId: CONCEPTS.B.id, asOfTimestamp: now });
+    const cState = getTrustState(store, { personId: PERSON_ID, conceptId: CONCEPTS.C.id, asOfTimestamp: now });
+    const dState = getTrustState(store, { personId: PERSON_ID, conceptId: CONCEPTS.D.id, asOfTimestamp: now });
 
     // Each hop should reduce confidence.
     expect(bState.confidence).toBeGreaterThan(cState.confidence);
@@ -102,7 +102,7 @@ describe('trust propagation', () => {
 
     // First: verify A and propagate success.
     const successState = recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -113,13 +113,13 @@ describe('trust propagation', () => {
     const successEvent: VerificationEvent = successState.verificationHistory[0]!;
 
     propagateTrust(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       sourceConceptId: CONCEPTS.A.id,
       verificationEvent: successEvent,
     });
 
     const bAfterSuccess = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       asOfTimestamp: now,
     });
@@ -129,7 +129,7 @@ describe('trust propagation', () => {
 
     // Seed concept B with some trust so failure has something to reduce.
     failStore.upsertTrustState({
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       level: 'inferred',
       confidence: bAfterSuccess.confidence,
@@ -140,7 +140,7 @@ describe('trust propagation', () => {
 
     // Record failure on A.
     const failState = recordVerification(failStore, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'failed',
@@ -151,7 +151,7 @@ describe('trust propagation', () => {
     // For failure propagation, we need to set A's confidence in the store
     // to reflect the failure impact.
     failStore.upsertTrustState({
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       level: 'contested',
       confidence: 0.5,
@@ -162,7 +162,7 @@ describe('trust propagation', () => {
 
     const failEvent: VerificationEvent = {
       id: 'fail_event',
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'failed',
@@ -171,14 +171,14 @@ describe('trust propagation', () => {
     };
 
     const failResults = propagateTrust(failStore, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       sourceConceptId: CONCEPTS.A.id,
       verificationEvent: failEvent,
     });
 
     // Failure should have caused B's confidence to drop.
     const bAfterFailure = getTrustState(failStore, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       asOfTimestamp: now,
     });

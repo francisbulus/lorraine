@@ -41,7 +41,7 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
 
     CREATE TABLE IF NOT EXISTS verification_events (
       id TEXT PRIMARY KEY,
-      learner_id TEXT NOT NULL,
+      person_id TEXT NOT NULL,
       concept_id TEXT NOT NULL,
       modality TEXT NOT NULL,
       result TEXT NOT NULL,
@@ -50,19 +50,19 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
     );
 
     CREATE INDEX IF NOT EXISTS idx_verifications_learner_concept
-      ON verification_events(learner_id, concept_id);
+      ON verification_events(person_id, concept_id);
     CREATE INDEX IF NOT EXISTS idx_verifications_timestamp
       ON verification_events(timestamp);
 
     CREATE TABLE IF NOT EXISTS trust_states (
-      learner_id TEXT NOT NULL,
+      person_id TEXT NOT NULL,
       concept_id TEXT NOT NULL,
       level TEXT NOT NULL,
       confidence REAL NOT NULL,
       last_verified INTEGER,
       inferred_from TEXT NOT NULL DEFAULT '[]',
       modalities_tested TEXT NOT NULL DEFAULT '[]',
-      PRIMARY KEY (learner_id, concept_id)
+      PRIMARY KEY (person_id, concept_id)
     );
   `);
 
@@ -86,24 +86,24 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
     ),
 
     insertVerificationEvent: db.prepare(
-      'INSERT INTO verification_events (id, learner_id, concept_id, modality, result, context, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO verification_events (id, person_id, concept_id, modality, result, context, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)'
     ),
     getVerificationHistory: db.prepare(
-      'SELECT * FROM verification_events WHERE learner_id = ? AND concept_id = ? ORDER BY timestamp ASC'
+      'SELECT * FROM verification_events WHERE person_id = ? AND concept_id = ? ORDER BY timestamp ASC'
     ),
 
     getTrustState: db.prepare(
-      'SELECT * FROM trust_states WHERE learner_id = ? AND concept_id = ?'
+      'SELECT * FROM trust_states WHERE person_id = ? AND concept_id = ?'
     ),
     upsertTrustState: db.prepare(
-      `INSERT INTO trust_states (learner_id, concept_id, level, confidence, last_verified, inferred_from, modalities_tested)
+      `INSERT INTO trust_states (person_id, concept_id, level, confidence, last_verified, inferred_from, modalities_tested)
        VALUES (?, ?, ?, ?, ?, ?, ?)
-       ON CONFLICT(learner_id, concept_id)
+       ON CONFLICT(person_id, concept_id)
        DO UPDATE SET level = excluded.level, confidence = excluded.confidence,
                      last_verified = excluded.last_verified, inferred_from = excluded.inferred_from,
                      modalities_tested = excluded.modalities_tested`
     ),
-    getAllTrustStates: db.prepare('SELECT * FROM trust_states WHERE learner_id = ?'),
+    getAllTrustStates: db.prepare('SELECT * FROM trust_states WHERE person_id = ?'),
   };
 
   function rowToNode(row: unknown): ConceptNode {
@@ -136,7 +136,7 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
   function rowToVerificationEvent(row: unknown): VerificationEvent {
     const r = row as {
       id: string;
-      learner_id: string;
+      person_id: string;
       concept_id: string;
       modality: string;
       result: string;
@@ -145,7 +145,7 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
     };
     return {
       id: r.id,
-      learnerId: r.learner_id,
+      personId: r.person_id,
       conceptId: r.concept_id,
       modality: r.modality as Modality,
       result: r.result as VerificationEvent['result'],
@@ -156,7 +156,7 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
 
   function rowToTrustState(row: unknown): StoredTrustState {
     const r = row as {
-      learner_id: string;
+      person_id: string;
       concept_id: string;
       level: string;
       confidence: number;
@@ -165,7 +165,7 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
       modalities_tested: string;
     };
     return {
-      learnerId: r.learner_id,
+      personId: r.person_id,
       conceptId: r.concept_id,
       level: r.level as TrustLevel,
       confidence: r.confidence,
@@ -213,28 +213,28 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
     // --- Verification Events ---
     insertVerificationEvent(event: VerificationEvent) {
       stmts.insertVerificationEvent.run(
-        event.id, event.learnerId, event.conceptId, event.modality,
+        event.id, event.personId, event.conceptId, event.modality,
         event.result, event.context, event.timestamp
       );
     },
-    getVerificationHistory(learnerId: string, conceptId: string): VerificationEvent[] {
-      return stmts.getVerificationHistory.all(learnerId, conceptId).map(rowToVerificationEvent);
+    getVerificationHistory(personId: string, conceptId: string): VerificationEvent[] {
+      return stmts.getVerificationHistory.all(personId, conceptId).map(rowToVerificationEvent);
     },
 
     // --- Trust State ---
-    getTrustState(learnerId: string, conceptId: string): StoredTrustState | null {
-      const row = stmts.getTrustState.get(learnerId, conceptId);
+    getTrustState(personId: string, conceptId: string): StoredTrustState | null {
+      const row = stmts.getTrustState.get(personId, conceptId);
       return row ? rowToTrustState(row) : null;
     },
     upsertTrustState(state: StoredTrustState) {
       stmts.upsertTrustState.run(
-        state.learnerId, state.conceptId, state.level, state.confidence,
+        state.personId, state.conceptId, state.level, state.confidence,
         state.lastVerified, JSON.stringify(state.inferredFrom),
         JSON.stringify(state.modalitiesTested)
       );
     },
-    getAllTrustStates(learnerId: string): StoredTrustState[] {
-      return stmts.getAllTrustStates.all(learnerId).map(rowToTrustState);
+    getAllTrustStates(personId: string): StoredTrustState[] {
+      return stmts.getAllTrustStates.all(personId).map(rowToTrustState);
     },
 
     // --- Lifecycle ---

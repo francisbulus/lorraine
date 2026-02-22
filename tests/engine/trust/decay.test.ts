@@ -2,7 +2,7 @@
 // Test: Cross-modality verification decays slower than single-modality.
 
 import { describe, it, expect, afterEach } from 'vitest';
-import { createTestGraph, LEARNER_ID, CONCEPTS } from './helpers.js';
+import { createTestGraph, PERSON_ID, CONCEPTS } from './helpers.js';
 import { recordVerification } from '../../../engine/trust/record.js';
 import { decayTrust, computeDecayedConfidence, computeHalfLife } from '../../../engine/trust/decay.js';
 import { getTrustState } from '../../../engine/trust/query.js';
@@ -24,7 +24,7 @@ describe('trust decay', () => {
 
     // Verify a concept.
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -33,26 +33,26 @@ describe('trust decay', () => {
     });
 
     const freshState = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       asOfTimestamp: now,
     });
 
     // Check at multiple time points — should follow exponential decay.
     const after7days = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       asOfTimestamp: now + 7 * MS_PER_DAY,
     });
 
     const after30days = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       asOfTimestamp: now + 30 * MS_PER_DAY,
     });
 
     const after90days = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       asOfTimestamp: now + 90 * MS_PER_DAY,
     });
@@ -65,7 +65,7 @@ describe('trust decay', () => {
     // After one half-life, confidence should be approximately halved.
     const halfLife = computeHalfLife(1, 0);
     const afterHalfLife = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       asOfTimestamp: now + halfLife * MS_PER_DAY,
     });
@@ -78,7 +78,7 @@ describe('trust decay', () => {
 
     // Should never go below 0.
     const afterYear = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       asOfTimestamp: now + 365 * MS_PER_DAY,
     });
@@ -91,7 +91,7 @@ describe('trust decay', () => {
 
     // Single modality on concept A.
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -101,7 +101,7 @@ describe('trust decay', () => {
 
     // Multiple modalities on concept B.
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -109,7 +109,7 @@ describe('trust decay', () => {
       timestamp: now,
     });
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       modality: 'sandbox:execution',
       result: 'demonstrated',
@@ -117,7 +117,7 @@ describe('trust decay', () => {
       timestamp: now + 1,
     });
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       modality: 'write:explanation',
       result: 'demonstrated',
@@ -129,13 +129,13 @@ describe('trust decay', () => {
     const futureTimestamp = now + 30 * MS_PER_DAY;
 
     const aState = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       asOfTimestamp: futureTimestamp,
     });
 
     const bState = getTrustState(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       asOfTimestamp: futureTimestamp,
     });
@@ -154,7 +154,7 @@ describe('trust decay', () => {
 
     // Verify two concepts.
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.A.id,
       modality: 'grill:transfer',
       result: 'demonstrated',
@@ -162,7 +162,7 @@ describe('trust decay', () => {
       timestamp: now,
     });
     recordVerification(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       conceptId: CONCEPTS.B.id,
       modality: 'sandbox:execution',
       result: 'demonstrated',
@@ -172,7 +172,7 @@ describe('trust decay', () => {
 
     // Run decay 60 days later.
     const results = decayTrust(store, {
-      learnerId: LEARNER_ID,
+      personId: PERSON_ID,
       asOfTimestamp: now + 60 * MS_PER_DAY,
     });
 

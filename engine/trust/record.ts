@@ -14,7 +14,7 @@ import type { Store } from '../store/interface.js';
 import { computeDecayedConfidence } from './decay.js';
 
 export interface RecordVerificationInput {
-  learnerId: string;
+  personId: string;
   conceptId: string;
   modality: Modality;
   result: 'demonstrated' | 'failed' | 'partial';
@@ -32,7 +32,7 @@ export function recordVerification(
   // Create and persist the verification event.
   const event: VerificationEvent = {
     id: eventId,
-    learnerId: input.learnerId,
+    personId: input.personId,
     conceptId: input.conceptId,
     modality: input.modality,
     result: input.result,
@@ -42,8 +42,8 @@ export function recordVerification(
   store.insertVerificationEvent(event);
 
   // Get existing trust state, or start from untested.
-  const existing = store.getTrustState(input.learnerId, input.conceptId);
-  const history = store.getVerificationHistory(input.learnerId, input.conceptId);
+  const existing = store.getTrustState(input.personId, input.conceptId);
+  const history = store.getVerificationHistory(input.personId, input.conceptId);
 
   // Compute modalities tested (unique set across all history).
   const modalitiesSet = new Set<Modality>();
@@ -57,7 +57,7 @@ export function recordVerification(
 
   // Persist updated trust state.
   const storedState = {
-    learnerId: input.learnerId,
+    personId: input.personId,
     conceptId: input.conceptId,
     level,
     confidence,
@@ -70,7 +70,7 @@ export function recordVerification(
   // Return the full TrustState object.
   return {
     conceptId: input.conceptId,
-    learnerId: input.learnerId,
+    personId: input.personId,
     level,
     confidence,
     verificationHistory: history,

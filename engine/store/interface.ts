@@ -11,7 +11,7 @@ import type {
 
 export interface StoredTrustState {
   conceptId: string;
-  learnerId: string;
+  personId: string;
   level: TrustLevel;
   confidence: number;
   lastVerified: number | null;
@@ -34,12 +34,12 @@ export interface Store {
 
   // --- Verification Events ---
   insertVerificationEvent(event: VerificationEvent): void;
-  getVerificationHistory(learnerId: string, conceptId: string): VerificationEvent[];
+  getVerificationHistory(personId: string, conceptId: string): VerificationEvent[];
 
   // --- Trust State ---
-  getTrustState(learnerId: string, conceptId: string): StoredTrustState | null;
+  getTrustState(personId: string, conceptId: string): StoredTrustState | null;
   upsertTrustState(state: StoredTrustState): void;
-  getAllTrustStates(learnerId: string): StoredTrustState[];
+  getAllTrustStates(personId: string): StoredTrustState[];
 
   // --- Lifecycle ---
   close(): void;

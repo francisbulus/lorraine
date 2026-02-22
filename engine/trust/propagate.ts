@@ -17,7 +17,7 @@ import {
 import type { Store } from '../store/interface.js';
 
 export interface PropagateTrustInput {
-  learnerId: string;
+  personId: string;
   sourceConceptId: string;
   verificationEvent: VerificationEvent;
 }
@@ -30,7 +30,7 @@ export function propagateTrust(
   const visited = new Set<string>();
 
   // Get the source concept's trust state to compute the signal strength.
-  const sourceState = store.getTrustState(input.learnerId, input.sourceConceptId);
+  const sourceState = store.getTrustState(input.personId, input.sourceConceptId);
   if (!sourceState) return results;
 
   // Cross-modality bonus on the source strengthens propagation.
@@ -53,7 +53,7 @@ export function propagateTrust(
   // BFS propagation through the graph.
   propagateStep(
     store,
-    input.learnerId,
+    input.personId,
     input.sourceConceptId,
     baseSignal,
     isFailed,
@@ -67,7 +67,7 @@ export function propagateTrust(
 
 function propagateStep(
   store: Store,
-  learnerId: string,
+  personId: string,
   conceptId: string,
   signalStrength: number,
   isFailed: boolean,
@@ -90,7 +90,7 @@ function propagateStep(
     // Stop if signal is too weak.
     if (attenuatedSignal < PROPAGATION_THRESHOLD) continue;
 
-    const currentState = store.getTrustState(learnerId, targetId);
+    const currentState = store.getTrustState(personId, targetId);
     const previousLevel: TrustLevel = currentState?.level ?? 'untested';
     const previousConfidence = currentState?.confidence ?? 0;
 
@@ -130,7 +130,7 @@ function propagateStep(
       }
 
       store.upsertTrustState({
-        learnerId,
+        personId,
         conceptId: targetId,
         level: newLevel,
         confidence: newConfidence,
@@ -154,7 +154,7 @@ function propagateStep(
       // Continue propagation deeper.
       propagateStep(
         store,
-        learnerId,
+        personId,
         targetId,
         attenuatedSignal,
         isFailed,
