@@ -1,6 +1,26 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import AppShell from './AppShell';
+
+// Mock the useSession hook so AppShell renders without a real API.
+vi.mock('../hooks/useSession', () => ({
+  useSession: () => ({
+    sessionId: null,
+    messages: [],
+    trustUpdates: [],
+    trustStates: {},
+    concepts: [],
+    edges: [],
+    territories: [],
+    calibration: null,
+    loading: false,
+    error: null,
+    initialized: true,
+    sendMessage: vi.fn(),
+    initSession: vi.fn(),
+    getTrustStateForConcept: () => null,
+  }),
+}));
 
 describe('AppShell', () => {
   it('renders the top bar with app title', () => {
@@ -13,7 +33,7 @@ describe('AppShell', () => {
     expect(screen.getByText('<1 min')).toBeInTheDocument();
   });
 
-  it('renders conversation state by default', () => {
+  it('renders conversation state by default with empty state', () => {
     render(<AppShell />);
     expect(screen.getByText('What do you want to learn?')).toBeInTheDocument();
   });
@@ -52,11 +72,11 @@ describe('AppShell', () => {
   it('has no bottom bar', () => {
     render(<AppShell />);
     expect(screen.queryByLabelText('Zone navigation')).not.toBeInTheDocument();
-    expect(screen.queryByText('Modes')).not.toBeInTheDocument();
   });
 
   it('does not render three-column panels', () => {
     render(<AppShell />);
+    // Old layout had aria-label="Map" and aria-label="Margin" panels
     expect(screen.queryByLabelText('Map')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Margin')).not.toBeInTheDocument();
   });

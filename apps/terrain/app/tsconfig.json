@@ -20,7 +20,8 @@
       "@/*": ["./src/*"],
       "@engine/*": ["../../../engine/*"],
       "@engine-services/*": ["../../../engine/services/*"],
-      "@llm/*": ["../../../llm/*"]
+      "@llm/*": ["../../../llm/*"],
+      "@domains/*": ["../../../domains/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

@@ -8,15 +8,11 @@ import MapView from './MapView';
 import Drawer from './Drawer';
 import ConceptDetail from './ConceptDetail';
 import SelfCalibration from './SelfCalibration';
-import type { ConceptDetailProps } from './ConceptDetail';
-import type { SelfCalibrationProps } from './SelfCalibration';
-import type { VisualMapConcept, VisualMapEdge } from './VisualMap';
-import type { TerritoryState } from '../lib/territory-state';
+import { useSession } from '../hooks/useSession';
 
 export interface DrawerState {
   type: 'concept' | 'calibration';
-  conceptDetail?: ConceptDetailProps;
-  calibrationData?: SelfCalibrationProps;
+  conceptId?: string;
 }
 
 export default function AppShell() {
@@ -24,10 +20,14 @@ export default function AppShell() {
   const [sessionStart] = useState(() => Date.now());
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
 
-  // Placeholder data — will be wired to real sources in later tasks.
-  const [concepts] = useState<VisualMapConcept[]>([]);
-  const [edges] = useState<VisualMapEdge[]>([]);
-  const [territories] = useState<TerritoryState[]>([]);
+  const session = useSession();
+
+  // Initialize session on mount.
+  useEffect(() => {
+    if (!session.initialized) {
+      session.initSession();
+    }
+  }, [session.initialized, session.initSession]);
 
   const toggleState = useCallback(() => {
     setAppState((s) => (s === 'conversation' ? 'map' : 'conversation'));
@@ -42,27 +42,7 @@ export default function AppShell() {
   }, []);
 
   const handleConceptClick = useCallback((conceptId: string) => {
-    // In a wired app, this would load concept detail from engine.
-    // For now, open drawer with placeholder.
-    setDrawer({
-      type: 'concept',
-      conceptDetail: {
-        conceptName: conceptId,
-        trustState: {
-          conceptId,
-          personId: '',
-          level: 'untested',
-          decayedConfidence: 0,
-          rawConfidence: 0,
-          modalitiesTested: [],
-          verificationCount: 0,
-          lastVerified: null,
-          verificationHistory: [],
-          claimHistory: [],
-          calibrationGap: null,
-        },
-      },
-    });
+    setDrawer({ type: 'concept', conceptId });
   }, []);
 
   // Keyboard shortcuts.
@@ -75,7 +55,6 @@ export default function AppShell() {
       }
       if (mod && e.key === '.') {
         e.preventDefault();
-        // Toggle context drawer — if open, close; if closed, no-op (needs a concept).
         if (drawer?.type === 'concept') {
           closeDrawer();
         }
@@ -85,6 +64,24 @@ export default function AppShell() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [toggleState, closeDrawer, drawer]);
 
+  // Build concept detail for drawer.
+  const drawerConceptDetail = drawer?.type === 'concept' && drawer.conceptId
+    ? (() => {
+        const ts = session.getTrustStateForConcept(drawer.conceptId);
+        if (!ts) return null;
+        const concept = session.concepts.find((c) => c.id === drawer.conceptId);
+        return {
+          conceptName: concept?.name ?? drawer.conceptId,
+          trustState: ts,
+        };
+      })()
+    : null;
+
+  const hasCalibrationData = session.calibration !== null &&
+    (session.calibration.aligned.length +
+      session.calibration.overclaimed.length +
+      session.calibration.underclaimed.length) > 0;
+
   return (
     <div className="app-shell">
       <TopBar
@@ -92,19 +89,25 @@ export default function AppShell() {
         onToggleState={toggleState}
         onCalibrationClick={openCalibrationDrawer}
         sessionStart={sessionStart}
-        hasCalibrationData={false}
+        hasCalibrationData={hasCalibrationData}
       />
 
       <div className="app-main">
         {appState === 'conversation' ? (
           <div className="conversation-state">
-            <ConversationPanel />
+            <ConversationPanel
+              messages={session.messages}
+              trustUpdates={session.trustUpdates}
+              onSubmit={session.sendMessage}
+              loading={session.loading}
+              error={session.error}
+            />
           </div>
         ) : (
           <MapView
-            concepts={concepts}
-            edges={edges}
-            territories={territories}
+            concepts={session.concepts}
+            edges={session.edges}
+            territories={session.territories}
             onConceptClick={handleConceptClick}
           />
         )}
@@ -115,11 +118,11 @@ export default function AppShell() {
         onClose={closeDrawer}
         ariaLabel={drawer?.type === 'calibration' ? 'Calibration' : 'Concept detail'}
       >
-        {drawer?.type === 'concept' && drawer.conceptDetail && (
-          <ConceptDetail {...drawer.conceptDetail} />
+        {drawer?.type === 'concept' && drawerConceptDetail && (
+          <ConceptDetail {...drawerConceptDetail} />
         )}
-        {drawer?.type === 'calibration' && drawer.calibrationData && (
-          <SelfCalibration {...drawer.calibrationData} />
+        {drawer?.type === 'calibration' && session.calibration && (
+          <SelfCalibration data={session.calibration} />
         )}
       </Drawer>
     </div>

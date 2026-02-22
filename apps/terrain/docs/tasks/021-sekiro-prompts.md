@@ -1,4 +1,4 @@
-# 020 — Sekiro Prompts (Phase 3)
+# 021 — Sekiro Prompts (Phase 3)
 
 ## Goal
 
