@@ -2,7 +2,7 @@
 
 ## Current Task
 
-006 — Grill Mode
+007 — Territory List View (MVP Map)
 
 ## Quick Status
 
@@ -23,7 +23,7 @@
 | 003 | App Shell & Layout | Done |
 | 004 | Conversation UI | Done |
 | 005 | Conversation Loop (Backend) | Done |
-| 006 | Grill Mode | Pending |
+| 006 | Grill Mode | Done |
 | 007 | Territory List View (MVP Map) | Pending |
 | 008 | Margin Panel | Pending |
 | 009 | Event Visibility & Challengeability | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-005 completed. Full conversation loop: signal extraction + write policy + deduplication + claim capture + LLM agent response. 70 terrain tests, 79 engine tests, zero regressions.
+006 completed. Grill engine: adaptive difficulty axis selection (recall→inference→transfer→discrimination), target selection (contested > claimed > stale > untested), self-verification detection, LLM interpretation, recordVerification integration. Conversation loop extended with grill state tracking. 97 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 006 — Grill mode.
+Start 007 — Territory list view (MVP map).
