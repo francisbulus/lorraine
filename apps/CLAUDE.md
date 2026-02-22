@@ -2,6 +2,10 @@
 
 This file provides guidance to Claude Code when working on applications built on the Lorraine engine.
 
+## Skills
+
+Always read and follow the skills in `apps/skills/`. These define coding standards and git practices that apply to all work in this repository.
+
 ## Workflow
 
 1. **Start of session:** Read the relevant app's `SESSION.md` (e.g. `apps/terrain/SESSION.md`)
