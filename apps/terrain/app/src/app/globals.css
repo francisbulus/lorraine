@@ -1040,6 +1040,61 @@ a {
   text-align: right;
 }
 
+/* --- Visual Map --- */
+.visual-map {
+  cursor: grab;
+}
+
+.visual-map:active {
+  cursor: grabbing;
+}
+
+.visual-map__empty {
+  font-size: var(--text-xs);
+  color: var(--stone);
+  padding: 16px 0;
+}
+
+.concept-node--contested {
+  animation: contested-pulse 3s ease-in-out infinite;
+}
+
+@keyframes contested-pulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+/* --- Map Panel Toggle --- */
+.map-panel__toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.map-panel__toggle-btn {
+  font-size: var(--text-xs);
+  color: var(--stone);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-bottom: 1px solid transparent;
+}
+
+.map-panel__toggle-btn:hover {
+  color: var(--chalk-dim);
+}
+
+.map-panel__toggle-btn--active {
+  color: var(--chalk);
+  border-bottom-color: var(--chalk-faint);
+}
+
+.map-panel__graph {
+  height: 400px;
+  min-height: 200px;
+}
+
 /* --- Code Editor --- */
 .code-editor {
   display: flex;

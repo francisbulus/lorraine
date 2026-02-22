@@ -2,7 +2,7 @@
 
 ## Current Task
 
-013 — Visual Map (Phase 2)
+014 — Self-Calibration View (Phase 2)
 
 ## Quick Status
 
@@ -30,7 +30,7 @@
 | 010 | Session Management | Done |
 | 011 | Explain Mode (Phase 2) | Done |
 | 012 | Sandbox Mode (Phase 2) | Done |
-| 013 | Visual Map (Phase 2) | Pending |
+| 013 | Visual Map (Phase 2) | Done |
 | 014 | Self-Calibration View (Phase 2) | Pending |
 | 015 | Mode Transitions (Phase 2) | Pending |
 | 016 | Threshold Surfacing (Phase 3) | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-012 completed. Sandbox mode: sandboxed code execution (Function constructor with whitelisted globals, blocked patterns for process/require/eval/fetch/document), LLM-powered annotation + signal extraction, inline sandbox container with mode opening animation. 258 terrain tests, 79 engine tests, zero regressions.
+013 completed. Visual map: force-directed layout engine (repulsion/attraction/damping/80 iterations), SVG node-edge graph with trust-colored circles (solid/stroked/half-fill/pulsing), pan/zoom interaction, goal path, hover tooltips, list/graph view toggle in MapPanel. 280 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 013 — Visual Map (Phase 2).
+Start 014 — Self-Calibration View (Phase 2).
