@@ -13,8 +13,17 @@ export interface LayoutEdge {
   from: string;
   to: string;
   type: string;
-  fromVerified: boolean;
-  toVerified: boolean;
+  fromTrustLevel: TrustLevel;
+  toTrustLevel: TrustLevel;
+}
+
+export interface TerritoryZone {
+  id: string;
+  name: string;
+  centroidX: number;
+  centroidY: number;
+  radiusX: number;
+  radiusY: number;
 }
 
 export interface LayoutResult {
@@ -116,7 +125,7 @@ export function computeLayout(input: LayoutInput): LayoutResult {
   }
 
   // Normalize to positive coordinates with padding.
-  const padding = 40;
+  const padding = 60;
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const node of nodes) {
     if (node.x < minX) minX = node.x;
@@ -140,8 +149,8 @@ export function computeLayout(input: LayoutInput): LayoutResult {
       from: e.from,
       to: e.to,
       type: e.type,
-      fromVerified: nodeMap.get(e.from)!.trustLevel === 'verified',
-      toVerified: nodeMap.get(e.to)!.trustLevel === 'verified',
+      fromTrustLevel: nodeMap.get(e.from)!.trustLevel,
+      toTrustLevel: nodeMap.get(e.to)!.trustLevel,
     }));
 
   return {
@@ -155,10 +164,10 @@ export function computeLayout(input: LayoutInput): LayoutResult {
 export function getNodeSize(trustLevel: TrustLevel): number {
   switch (trustLevel) {
     case 'verified': return 8;
-    case 'contested': return 7;
+    case 'contested': return 6;
     case 'inferred': return 6;
-    case 'untested': return 5;
-    default: return 5;
+    case 'untested': return 4;
+    default: return 4;
   }
 }
 
@@ -168,6 +177,53 @@ export function getNodeColor(trustLevel: TrustLevel): string {
     case 'contested': return 'var(--contested)';
     case 'inferred': return 'var(--inferred)';
     case 'untested': return 'var(--fog)';
-    default: return 'var(--fog)';
+    default: return 'var(--stone)';
   }
+}
+
+export function getNodeStrokeDash(trustLevel: TrustLevel): string | undefined {
+  if (trustLevel === 'untested') return '2 2';
+  return undefined;
+}
+
+export function getLabelColor(trustLevel: TrustLevel, hovered: boolean): string {
+  if (hovered) return 'var(--chalk)';
+  switch (trustLevel) {
+    case 'verified': return 'var(--chalk-dim)';
+    case 'contested': return 'var(--chalk-faint)';
+    case 'inferred': return 'var(--chalk-faint)';
+    case 'untested': return 'var(--stone-dim)';
+    default: return 'var(--stone-dim)';
+  }
+}
+
+export function computeTerritoryZones(
+  nodes: LayoutNode[],
+  territories: { id: string; name: string; conceptIds: string[] }[]
+): TerritoryZone[] {
+  return territories
+    .map((t) => {
+      const tNodes = nodes.filter((n) => t.conceptIds.includes(n.id));
+      if (tNodes.length === 0) return null;
+
+      const cx = tNodes.reduce((s, n) => s + n.x, 0) / tNodes.length;
+      const cy = tNodes.reduce((s, n) => s + n.y, 0) / tNodes.length;
+
+      let maxDx = 0;
+      let maxDy = 0;
+      for (const n of tNodes) {
+        maxDx = Math.max(maxDx, Math.abs(n.x - cx));
+        maxDy = Math.max(maxDy, Math.abs(n.y - cy));
+      }
+
+      return {
+        id: t.id,
+        name: t.name,
+        centroidX: cx,
+        centroidY: cy,
+        radiusX: Math.max(maxDx + 40, 50),
+        radiusY: Math.max(maxDy + 40, 50),
+      };
+    })
+    .filter((z): z is TerritoryZone => z !== null);
 }

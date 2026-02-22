@@ -1,8 +1,8 @@
 'use client';
 
-import { useMemo, useState, useRef, useCallback } from 'react';
+import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { TrustLevel } from '@engine/types';
-import { computeLayout, type LayoutNode } from '../lib/map-layout';
+import { computeLayout, computeTerritoryZones, type LayoutNode } from '../lib/map-layout';
 import ConceptNode from './ConceptNode';
 import GraphEdge from './GraphEdge';
 
@@ -19,9 +19,16 @@ export interface VisualMapEdge {
   type: string;
 }
 
+export interface VisualMapTerritory {
+  id: string;
+  name: string;
+  conceptIds: string[];
+}
+
 export interface VisualMapProps {
   concepts: VisualMapConcept[];
   edges: VisualMapEdge[];
+  territories?: VisualMapTerritory[];
   activeConcept?: string | null;
   goalConcept?: string | null;
   onConceptClick?: (conceptId: string) => void;
@@ -30,6 +37,7 @@ export interface VisualMapProps {
 export default function VisualMap({
   concepts,
   edges,
+  territories = [],
   activeConcept,
   goalConcept,
   onConceptClick,
@@ -47,14 +55,30 @@ export default function VisualMap({
     return map;
   }, [layout.nodes]);
 
+  const zones = useMemo(
+    () => computeTerritoryZones(layout.nodes, territories),
+    [layout.nodes, territories]
+  );
+
   // Pan and zoom state.
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [scale, setScale] = useState(1);
   const [dragging, setDragging] = useState(false);
   const dragStart = useRef({ x: 0, y: 0, ox: 0, oy: 0 });
+  const velocity = useRef({ vx: 0, vy: 0 });
+  const lastMove = useRef({ x: 0, y: 0, time: 0 });
+  const animFrame = useRef<number>(0);
   const svgRef = useRef<SVGSVGElement>(null);
 
+  useEffect(() => {
+    return () => {
+      if (animFrame.current) cancelAnimationFrame(animFrame.current);
+    };
+  }, []);
+
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (animFrame.current) cancelAnimationFrame(animFrame.current);
+    velocity.current = { vx: 0, vy: 0 };
     setDragging(true);
     dragStart.current = {
       x: e.clientX,
@@ -62,6 +86,7 @@ export default function VisualMap({
       ox: offset.x,
       oy: offset.y,
     };
+    lastMove.current = { x: e.clientX, y: e.clientY, time: performance.now() };
   }, [offset]);
 
   const handleMouseMove = useCallback((e: React.MouseEvent) => {
@@ -72,10 +97,30 @@ export default function VisualMap({
       x: dragStart.current.ox + dx,
       y: dragStart.current.oy + dy,
     });
+    const now = performance.now();
+    const dt = now - lastMove.current.time;
+    if (dt > 0) {
+      velocity.current = {
+        vx: ((e.clientX - lastMove.current.x) / dt) * 16,
+        vy: ((e.clientY - lastMove.current.y) / dt) * 16,
+      };
+    }
+    lastMove.current = { x: e.clientX, y: e.clientY, time: now };
   }, [dragging]);
 
   const handleMouseUp = useCallback(() => {
     setDragging(false);
+    const animate = () => {
+      const { vx, vy } = velocity.current;
+      if (Math.abs(vx) < 0.5 && Math.abs(vy) < 0.5) return;
+      velocity.current = { vx: vx * 0.92, vy: vy * 0.92 };
+      setOffset((prev) => ({
+        x: prev.x + velocity.current.vx,
+        y: prev.y + velocity.current.vy,
+      }));
+      animFrame.current = requestAnimationFrame(animate);
+    };
+    animFrame.current = requestAnimationFrame(animate);
   }, []);
 
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -116,7 +161,38 @@ export default function VisualMap({
       role="img"
       aria-label="Concept map"
     >
+      <defs>
+        <filter id="zone-blur">
+          <feGaussianBlur stdDeviation="20" />
+        </filter>
+      </defs>
+
       <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
+        {/* Territory zones — watercolor wash behind clusters */}
+        {zones.map((zone) => (
+          <g key={`zone-${zone.id}`}>
+            <ellipse
+              cx={zone.centroidX}
+              cy={zone.centroidY}
+              rx={zone.radiusX}
+              ry={zone.radiusY}
+              fill="var(--ground-soft)"
+              opacity={0.5}
+              filter="url(#zone-blur)"
+            />
+            <text
+              x={zone.centroidX}
+              y={zone.centroidY - zone.radiusY + 14}
+              textAnchor="middle"
+              fill="var(--chalk-faint)"
+              fontSize={11}
+              fontFamily="var(--font-voice)"
+            >
+              {zone.name}
+            </text>
+          </g>
+        ))}
+
         {/* Goal path */}
         {goalPath && (
           <line
@@ -142,7 +218,9 @@ export default function VisualMap({
               y1={fromNode.y}
               x2={toNode.x}
               y2={toNode.y}
-              bothVerified={edge.fromVerified && edge.toVerified}
+              type={edge.type}
+              fromTrustLevel={edge.fromTrustLevel}
+              toTrustLevel={edge.toTrustLevel}
             />
           );
         })}

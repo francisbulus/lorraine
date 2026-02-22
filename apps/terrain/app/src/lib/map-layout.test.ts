@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { computeLayout, getNodeSize, getNodeColor } from './map-layout';
+import {
+  computeLayout,
+  getNodeSize,
+  getNodeColor,
+  getNodeStrokeDash,
+  getLabelColor,
+  computeTerritoryZones,
+} from './map-layout';
 
 describe('computeLayout', () => {
   it('returns empty layout for no concepts', () => {
@@ -38,19 +45,30 @@ describe('computeLayout', () => {
     }
   });
 
-  it('produces edges matching input', () => {
+  it('produces edges with trust levels', () => {
     const result = computeLayout({
       concepts: [
         { id: 'a', name: 'A', trustLevel: 'verified' },
-        { id: 'b', name: 'B', trustLevel: 'verified' },
+        { id: 'b', name: 'B', trustLevel: 'inferred' },
       ],
       edges: [{ from: 'a', to: 'b', type: 'prerequisite' }],
     });
     expect(result.edges).toHaveLength(1);
     expect(result.edges[0].from).toBe('a');
     expect(result.edges[0].to).toBe('b');
-    expect(result.edges[0].fromVerified).toBe(true);
-    expect(result.edges[0].toVerified).toBe(true);
+    expect(result.edges[0].fromTrustLevel).toBe('verified');
+    expect(result.edges[0].toTrustLevel).toBe('inferred');
+  });
+
+  it('preserves edge type', () => {
+    const result = computeLayout({
+      concepts: [
+        { id: 'a', name: 'A', trustLevel: 'untested' },
+        { id: 'b', name: 'B', trustLevel: 'untested' },
+      ],
+      edges: [{ from: 'a', to: 'b', type: 'prerequisite' }],
+    });
+    expect(result.edges[0].type).toBe('prerequisite');
   });
 
   it('filters edges with unknown nodes', () => {
@@ -119,5 +137,86 @@ describe('getNodeColor', () => {
     expect(getNodeColor('contested')).toBe('var(--contested)');
     expect(getNodeColor('inferred')).toBe('var(--inferred)');
     expect(getNodeColor('untested')).toBe('var(--fog)');
+  });
+});
+
+describe('getNodeStrokeDash', () => {
+  it('returns dash pattern for untested', () => {
+    expect(getNodeStrokeDash('untested')).toBe('2 2');
+  });
+
+  it('returns undefined for verified', () => {
+    expect(getNodeStrokeDash('verified')).toBeUndefined();
+  });
+
+  it('returns undefined for inferred', () => {
+    expect(getNodeStrokeDash('inferred')).toBeUndefined();
+  });
+
+  it('returns undefined for contested', () => {
+    expect(getNodeStrokeDash('contested')).toBeUndefined();
+  });
+});
+
+describe('getLabelColor', () => {
+  it('returns --chalk when hovered', () => {
+    expect(getLabelColor('untested', true)).toBe('var(--chalk)');
+    expect(getLabelColor('verified', true)).toBe('var(--chalk)');
+  });
+
+  it('returns --chalk-dim for verified', () => {
+    expect(getLabelColor('verified', false)).toBe('var(--chalk-dim)');
+  });
+
+  it('returns --chalk-faint for inferred and contested', () => {
+    expect(getLabelColor('inferred', false)).toBe('var(--chalk-faint)');
+    expect(getLabelColor('contested', false)).toBe('var(--chalk-faint)');
+  });
+
+  it('returns --stone-dim for untested', () => {
+    expect(getLabelColor('untested', false)).toBe('var(--stone-dim)');
+  });
+});
+
+describe('computeTerritoryZones', () => {
+  const nodes = [
+    { id: 'a', name: 'A', x: 100, y: 100, trustLevel: 'verified' as const },
+    { id: 'b', name: 'B', x: 200, y: 100, trustLevel: 'inferred' as const },
+    { id: 'c', name: 'C', x: 300, y: 300, trustLevel: 'untested' as const },
+  ];
+
+  it('computes zones for territories with matching nodes', () => {
+    const zones = computeTerritoryZones(nodes, [
+      { id: 't1', name: 'Zone 1', conceptIds: ['a', 'b'] },
+    ]);
+    expect(zones).toHaveLength(1);
+    expect(zones[0].name).toBe('Zone 1');
+    expect(zones[0].centroidX).toBe(150);
+    expect(zones[0].centroidY).toBe(100);
+  });
+
+  it('skips territories with no matching nodes', () => {
+    const zones = computeTerritoryZones(nodes, [
+      { id: 't1', name: 'Zone 1', conceptIds: ['missing'] },
+    ]);
+    expect(zones).toHaveLength(0);
+  });
+
+  it('computes radii with minimum size', () => {
+    const zones = computeTerritoryZones(
+      [{ id: 'a', name: 'A', x: 100, y: 100, trustLevel: 'verified' as const }],
+      [{ id: 't1', name: 'Solo', conceptIds: ['a'] }]
+    );
+    expect(zones[0].radiusX).toBeGreaterThanOrEqual(50);
+    expect(zones[0].radiusY).toBeGreaterThanOrEqual(50);
+  });
+
+  it('computes radii covering all nodes', () => {
+    const zones = computeTerritoryZones(nodes, [
+      { id: 't1', name: 'All', conceptIds: ['a', 'b', 'c'] },
+    ]);
+    // centroid is at (200, ~167), max spread > 50 in each axis
+    expect(zones[0].radiusX).toBeGreaterThan(50);
+    expect(zones[0].radiusY).toBeGreaterThan(50);
   });
 });

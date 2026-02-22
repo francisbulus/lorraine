@@ -50,7 +50,7 @@
 
 ## Last Session
 
-Mode wiring: wired explain mode, sandbox mode, and mode transitions into the conversation loop. conversation-loop.ts now routes through mode manager (learner transitions + agent suggestions), explain engine (depth-calibrated explanations, simpler/deeper adjustment), and sandbox engine (inline code execution with signal extraction). API route gained sandbox-run and end-mode actions, returns mode state. useSession hook tracks mode/sandboxActive/sandboxConceptId, exposes runSandboxCode/closeSandbox. ConversationPanel renders Sandbox inline when active. AppShell passes sandbox props through. 378 terrain tests (+15 new), 79 engine tests, zero regressions.
+Visual map polish: aligned map rendering with design system. ConceptNode now shows persistent labels below nodes (--font-data, trust-level-based colors, brightens to --chalk on hover), hover glow ring (--lamp-glow), untested dotted stroke via getNodeStrokeDash. GraphEdge accepts trust levels and edge type — edges between verified concepts are more visible (--stone), untested barely visible (--stone-faint), prerequisite edges thicker than related_to. VisualMap renders territory zones as blurred SVG ellipses (watercolor wash) with territory labels (--font-voice), momentum pan/zoom with velocity damping on release. MapView determines active territory from activeConcept and passes active prop to TerritoryCard (--lamp left border). map-layout.ts gained computeTerritoryZones, getNodeStrokeDash, getLabelColor; LayoutEdge changed from fromVerified/toVerified booleans to fromTrustLevel/toTrustLevel TrustLevel values. 395 terrain tests (+17 new), 79 engine tests, zero regressions.
 
 ## Blockers
 

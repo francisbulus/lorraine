@@ -14,7 +14,7 @@ const makeEdges = (): VisualMapEdge[] => [
 ];
 
 const makeTerritory = (): TerritoryState => ({
-  territory: { name: 'Networking', conceptIds: ['tcp', 'udp'], thresholds: [] },
+  territory: { id: 'networking', name: 'Networking', conceptIds: ['tcp', 'udp'] },
   verifiedCount: 1,
   inferredCount: 1,
   contestedCount: 0,
@@ -45,7 +45,7 @@ describe('MapView', () => {
         territories={[makeTerritory()]}
       />
     );
-    expect(screen.getByText('Networking')).toBeInTheDocument();
+    expect(screen.getByLabelText('Networking territory')).toBeInTheDocument();
   });
 
   it('does not render territory sidebar when empty', () => {
@@ -74,5 +74,30 @@ describe('MapView', () => {
     );
     // VisualMap receives the handler — click testing covered in VisualMap.test.tsx
     expect(screen.getByLabelText('Concept map')).toBeInTheDocument();
+  });
+
+  it('marks active territory based on activeConcept', () => {
+    const { container } = render(
+      <MapView
+        concepts={makeConcepts()}
+        edges={makeEdges()}
+        territories={[makeTerritory()]}
+        activeConcept="tcp"
+      />
+    );
+    const activeCard = container.querySelector('.territory-card--active');
+    expect(activeCard).not.toBeNull();
+  });
+
+  it('no active territory when activeConcept is absent', () => {
+    const { container } = render(
+      <MapView
+        concepts={makeConcepts()}
+        edges={makeEdges()}
+        territories={[makeTerritory()]}
+      />
+    );
+    const activeCard = container.querySelector('.territory-card--active');
+    expect(activeCard).toBeNull();
   });
 });

@@ -60,6 +60,32 @@ describe('VisualMap', () => {
     const dashedLines = container.querySelectorAll('line[stroke-dasharray]');
     expect(dashedLines.length).toBe(1);
   });
+
+  it('renders territory zones when territories provided', () => {
+    const { container } = render(
+      <VisualMap
+        concepts={concepts}
+        edges={edges}
+        territories={[
+          { id: 'tcp', name: 'TCP Fundamentals', conceptIds: ['tcp-basics', 'tcp-handshake'] },
+        ]}
+      />
+    );
+    const ellipses = container.querySelectorAll('ellipse');
+    expect(ellipses.length).toBe(1);
+    // Territory label
+    const texts = container.querySelectorAll('text');
+    const zoneLabel = Array.from(texts).find((t) => t.textContent === 'TCP Fundamentals');
+    expect(zoneLabel).toBeDefined();
+  });
+
+  it('renders persistent labels on nodes', () => {
+    const { container } = render(<VisualMap concepts={concepts} edges={edges} />);
+    const texts = container.querySelectorAll('text');
+    const labels = Array.from(texts).map((t) => t.textContent);
+    expect(labels).toContain('TCP Basics');
+    expect(labels).toContain('Flow Control');
+  });
 });
 
 describe('MapPanel view toggle', () => {

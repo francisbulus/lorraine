@@ -24,12 +24,21 @@ export default function MapView({
   onConceptClick,
   onTerritoryClick,
 }: MapViewProps) {
+  const activeTerritoryName = activeConcept
+    ? territories.find((t) =>
+        t.territory.conceptIds.includes(activeConcept)
+      )?.territory.name ?? null
+    : null;
+
+  const territoryGroups = territories.map((t) => t.territory);
+
   return (
     <div className="map-view">
       <div className="map-view__graph">
         <VisualMap
           concepts={concepts}
           edges={edges}
+          territories={territoryGroups}
           activeConcept={activeConcept}
           goalConcept={goalConcept}
           onConceptClick={onConceptClick}
@@ -41,6 +50,7 @@ export default function MapView({
             <TerritoryCard
               key={t.territory.name}
               state={t}
+              active={t.territory.name === activeTerritoryName}
               onClick={() => onTerritoryClick?.(t.territory.name)}
             />
           ))}
