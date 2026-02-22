@@ -19,6 +19,7 @@ export interface RecordVerificationInput {
   modality: Modality;
   result: 'demonstrated' | 'failed' | 'partial';
   context: string;
+  source?: 'internal' | 'external';
   timestamp?: number;
 }
 
@@ -37,6 +38,7 @@ export function recordVerification(
     modality: input.modality,
     result: input.result,
     context: input.context,
+    source: input.source ?? 'internal',
     timestamp,
   };
   store.insertVerificationEvent(event);
@@ -67,6 +69,20 @@ export function recordVerification(
   };
   store.upsertTrustState(storedState);
 
+  // Fetch claim history and compute calibration gap.
+  const claimHistory = store.getClaimHistory(input.personId, input.conceptId);
+  const latestClaim = store.getLatestClaim(input.personId, input.conceptId);
+  const decayedConfidence = computeDecayedConfidence(
+    confidence,
+    timestamp,
+    timestamp,
+    modalitiesTested.length,
+    0 // downstream dependents count not relevant for freshly verified
+  );
+  const calibrationGap = latestClaim
+    ? latestClaim.selfReportedConfidence - decayedConfidence
+    : null;
+
   // Return the full TrustState object.
   return {
     conceptId: input.conceptId,
@@ -74,20 +90,16 @@ export function recordVerification(
     level,
     confidence,
     verificationHistory: history,
+    claimHistory,
     modalitiesTested,
     lastVerified: timestamp,
     inferredFrom: storedState.inferredFrom,
-    decayedConfidence: computeDecayedConfidence(
-      confidence,
-      timestamp,
-      timestamp,
-      modalitiesTested.length,
-      0 // downstream dependents count not relevant for freshly verified
-    ),
+    decayedConfidence,
+    calibrationGap,
   };
 }
 
-function computeTrustFromHistory(
+export function computeTrustFromHistory(
   history: VerificationEvent[],
   existing: { level: TrustLevel; confidence: number; inferredFrom: string[] } | null
 ): { level: TrustLevel; confidence: number } {

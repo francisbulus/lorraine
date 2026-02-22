@@ -12,11 +12,11 @@ import type { Store } from '../../../engine/store/interface.js';
 export const PERSON_ID = 'person_ade';
 
 export const CONCEPTS = {
-  A: { id: 'concept_a', name: 'Reliable Delivery', domain: 'networking', territory: 'tcp-fundamentals' },
-  B: { id: 'concept_b', name: 'TCP Handshake', domain: 'networking', territory: 'tcp-fundamentals' },
-  C: { id: 'concept_c', name: 'Sequence Numbers', domain: 'networking', territory: 'tcp-reliability' },
-  D: { id: 'concept_d', name: 'Retransmission', domain: 'networking', territory: 'tcp-reliability' },
-  E: { id: 'concept_e', name: 'Congestion Control', domain: 'networking', territory: 'tcp-advanced' },
+  A: { id: 'concept_a', name: 'Reliable Delivery', description: 'TCP fundamentals: reliable delivery mechanisms' },
+  B: { id: 'concept_b', name: 'TCP Handshake', description: 'TCP fundamentals: three-way handshake protocol' },
+  C: { id: 'concept_c', name: 'Sequence Numbers', description: 'TCP reliability: sequence number tracking' },
+  D: { id: 'concept_d', name: 'Retransmission', description: 'TCP reliability: retransmission strategies' },
+  E: { id: 'concept_e', name: 'Congestion Control', description: 'TCP advanced: congestion control algorithms' },
 } as const;
 
 export function createTestGraph(): Store {

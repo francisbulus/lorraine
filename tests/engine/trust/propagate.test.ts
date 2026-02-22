@@ -167,6 +167,7 @@ describe('trust propagation', () => {
       modality: 'grill:transfer',
       result: 'failed',
       context: 'Failed to derive reliability protocol',
+      source: 'internal',
       timestamp: now,
     };
 

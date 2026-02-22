@@ -60,7 +60,7 @@ export function computeDecayedConfidence(
 }
 
 /**
- * Run decay across all concepts for a learner.
+ * Run decay across all concepts for a person.
  * Returns every concept whose confidence has dropped since last check.
  */
 export function decayTrust(

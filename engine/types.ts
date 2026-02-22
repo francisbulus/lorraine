@@ -16,7 +16,8 @@ export type Modality =
   | 'write:teaching'
   | 'sketch:diagram'
   | 'sketch:process'
-  | 'conversation:unprompted';
+  | 'integrated:use'
+  | 'external:observed';
 
 // Trust strength per modality — higher means stronger verification signal.
 // From foundational.md Section 4.2 verification modalities table.
@@ -31,7 +32,8 @@ export const MODALITY_STRENGTH: Record<Modality, number> = {
   'write:teaching': 0.85,
   'sketch:diagram': 0.6,
   'sketch:process': 0.6,
-  'conversation:unprompted': 0.95,
+  'integrated:use': 0.95,
+  'external:observed': 0.8,
 };
 
 // --- Verification ---
@@ -45,7 +47,20 @@ export interface VerificationEvent {
   modality: Modality;
   result: VerificationResult;
   context: string;  // provenance — what was tested
+  source: 'internal' | 'external';
   timestamp: number; // unix ms
+}
+
+// --- Claims ---
+
+export interface ClaimEvent {
+  id: string;
+  personId: string;
+  conceptId: string;
+  selfReportedConfidence: number; // 0.0 – 1.0
+  context: string;
+  timestamp: number;
+  retracted: boolean;
 }
 
 // --- Trust ---
@@ -58,21 +73,22 @@ export interface TrustState {
   level: TrustLevel;
   confidence: number; // 0.0 – 1.0
   verificationHistory: VerificationEvent[];
+  claimHistory: ClaimEvent[];
   modalitiesTested: Modality[];
   lastVerified: number | null; // timestamp of most recent verification event
   inferredFrom: string[]; // concept IDs that led to this inference
   decayedConfidence: number; // confidence adjusted for time
+  calibrationGap: number | null; // latest claim confidence minus evidence confidence
 }
 
 // --- Graph ---
 
-export type EdgeType = 'prerequisite' | 'component_of' | 'related_to' | 'analogous_to';
+export type EdgeType = 'prerequisite' | 'component_of' | 'related_to';
 
 export interface ConceptNode {
   id: string;
   name: string;
-  domain: string;
-  territory?: string;
+  description: string;
 }
 
 export interface RelationshipEdge {
@@ -102,6 +118,77 @@ export interface DecayResult {
   previousConfidence: number;
   decayedConfidence: number;
   daysSinceVerified: number;
+}
+
+// --- Retraction ---
+
+export interface RetractEventInput {
+  eventId: string;
+  eventType: 'verification' | 'claim';
+  reason: 'fraudulent' | 'duplicate' | 'identity_mixup' | 'consent_erasure' | 'data_correction';
+  retractedBy: string;
+  timestamp?: number;
+}
+
+export interface RetractResult {
+  retracted: boolean;
+  trustStatesAffected: string[]; // concept IDs whose derived trust state changed
+}
+
+// --- RecordClaim ---
+
+export interface RecordClaimResult {
+  recorded: boolean;
+  currentTrustState: TrustState;
+  calibrationGap: number;
+}
+
+// --- Graph APIs ---
+
+export interface LoadConceptsInput {
+  concepts: { id: string; name: string; description: string }[];
+  edges: { from: string; to: string; type: EdgeType; inferenceStrength: number }[];
+}
+
+export interface LoadConceptsResult {
+  loaded: number;
+  edgesCreated: number;
+  errors: string[];
+}
+
+export interface GetGraphInput {
+  conceptIds?: string[];
+  personId?: string;
+  depth?: number;
+}
+
+export interface GetGraphResult {
+  concepts: { id: string; name: string; description: string; trustState?: TrustState }[];
+  edges: { from: string; to: string; type: EdgeType; inferenceStrength: number }[];
+}
+
+// --- Epistemics ---
+
+export interface CalibrateResult {
+  predictionAccuracy: number;
+  overconfidenceBias: number;
+  underconfidenceBias: number;
+  stalePercentage: number;
+  surpriseRate: number;
+  claimCalibration: number;
+  recommendation: string;
+}
+
+export interface ExplainDecisionInput {
+  decisionType: 'trust_update' | 'propagation_result' | 'decay_result' | 'contested_detection' | 'calibration_finding';
+  decisionContext: Record<string, unknown>;
+}
+
+export interface ExplainDecisionResult {
+  reasoning: string;
+  trustInputs: Record<string, unknown>;
+  alternatives: string[];
+  confidence: number;
 }
 
 // --- Constants ---

@@ -6,10 +6,11 @@ import type {
   ConceptNode,
   RelationshipEdge,
   VerificationEvent,
+  ClaimEvent,
   TrustLevel,
   Modality,
 } from '../types.js';
-import type { Store, StoredTrustState } from './interface.js';
+import type { Store, StoredTrustState, StoredRetraction } from './interface.js';
 
 export function createSQLiteStore(dbPath: string = ':memory:'): Store {
   const db = new Database(dbPath);
@@ -22,8 +23,7 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
     CREATE TABLE IF NOT EXISTS concept_nodes (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
-      domain TEXT NOT NULL,
-      territory TEXT
+      description TEXT NOT NULL DEFAULT ''
     );
 
     CREATE TABLE IF NOT EXISTS relationship_edges (
@@ -46,13 +46,40 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
       modality TEXT NOT NULL,
       result TEXT NOT NULL,
       context TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'internal',
+      retracted INTEGER NOT NULL DEFAULT 0,
       timestamp INTEGER NOT NULL
     );
 
-    CREATE INDEX IF NOT EXISTS idx_verifications_learner_concept
+    CREATE INDEX IF NOT EXISTS idx_verifications_person_concept
       ON verification_events(person_id, concept_id);
     CREATE INDEX IF NOT EXISTS idx_verifications_timestamp
       ON verification_events(timestamp);
+
+    CREATE TABLE IF NOT EXISTS claim_events (
+      id TEXT PRIMARY KEY,
+      person_id TEXT NOT NULL,
+      concept_id TEXT NOT NULL,
+      self_reported_confidence REAL NOT NULL,
+      context TEXT NOT NULL,
+      retracted INTEGER NOT NULL DEFAULT 0,
+      timestamp INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_claims_person_concept
+      ON claim_events(person_id, concept_id);
+
+    CREATE TABLE IF NOT EXISTS retraction_events (
+      id TEXT PRIMARY KEY,
+      event_id TEXT NOT NULL,
+      event_type TEXT NOT NULL,
+      reason TEXT NOT NULL,
+      retracted_by TEXT NOT NULL,
+      timestamp INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_retractions_event
+      ON retraction_events(event_id);
 
     CREATE TABLE IF NOT EXISTS trust_states (
       person_id TEXT NOT NULL,
@@ -69,10 +96,10 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
   // Prepared statements for performance.
   const stmts = {
     insertNode: db.prepare(
-      'INSERT OR REPLACE INTO concept_nodes (id, name, domain, territory) VALUES (?, ?, ?, ?)'
+      'INSERT OR REPLACE INTO concept_nodes (id, name, description) VALUES (?, ?, ?)'
     ),
     getNode: db.prepare('SELECT * FROM concept_nodes WHERE id = ?'),
-    getNodesByDomain: db.prepare('SELECT * FROM concept_nodes WHERE domain = ?'),
+    getAllNodes: db.prepare('SELECT * FROM concept_nodes'),
 
     insertEdge: db.prepare(
       'INSERT OR REPLACE INTO relationship_edges (id, from_concept_id, to_concept_id, type, inference_strength) VALUES (?, ?, ?, ?, ?)'
@@ -80,16 +107,39 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
     getEdge: db.prepare('SELECT * FROM relationship_edges WHERE id = ?'),
     getEdgesFrom: db.prepare('SELECT * FROM relationship_edges WHERE from_concept_id = ?'),
     getEdgesTo: db.prepare('SELECT * FROM relationship_edges WHERE to_concept_id = ?'),
+    getAllEdges: db.prepare('SELECT * FROM relationship_edges'),
     // Downstream dependents: concepts where this concept is a prerequisite (from → to).
     getDownstreamDependents: db.prepare(
       "SELECT to_concept_id FROM relationship_edges WHERE from_concept_id = ? AND type = 'prerequisite'"
     ),
 
     insertVerificationEvent: db.prepare(
-      'INSERT INTO verification_events (id, person_id, concept_id, modality, result, context, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?)'
+      'INSERT INTO verification_events (id, person_id, concept_id, modality, result, context, source, retracted, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?)'
     ),
+    getVerificationEvent: db.prepare('SELECT * FROM verification_events WHERE id = ?'),
     getVerificationHistory: db.prepare(
-      'SELECT * FROM verification_events WHERE person_id = ? AND concept_id = ? ORDER BY timestamp ASC'
+      'SELECT * FROM verification_events WHERE person_id = ? AND concept_id = ? AND retracted = 0 ORDER BY timestamp ASC'
+    ),
+
+    insertClaimEvent: db.prepare(
+      'INSERT INTO claim_events (id, person_id, concept_id, self_reported_confidence, context, retracted, timestamp) VALUES (?, ?, ?, ?, ?, 0, ?)'
+    ),
+    getClaimEvent: db.prepare('SELECT * FROM claim_events WHERE id = ?'),
+    getClaimHistory: db.prepare(
+      'SELECT * FROM claim_events WHERE person_id = ? AND concept_id = ? AND retracted = 0 ORDER BY timestamp ASC'
+    ),
+    getLatestClaim: db.prepare(
+      'SELECT * FROM claim_events WHERE person_id = ? AND concept_id = ? AND retracted = 0 ORDER BY timestamp DESC LIMIT 1'
+    ),
+
+    insertRetraction: db.prepare(
+      'INSERT INTO retraction_events (id, event_id, event_type, reason, retracted_by, timestamp) VALUES (?, ?, ?, ?, ?, ?)'
+    ),
+    markVerificationRetracted: db.prepare(
+      'UPDATE verification_events SET retracted = 1 WHERE id = ?'
+    ),
+    markClaimRetracted: db.prepare(
+      'UPDATE claim_events SET retracted = 1 WHERE id = ?'
     ),
 
     getTrustState: db.prepare(
@@ -107,12 +157,11 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
   };
 
   function rowToNode(row: unknown): ConceptNode {
-    const r = row as { id: string; name: string; domain: string; territory: string | null };
+    const r = row as { id: string; name: string; description: string };
     return {
       id: r.id,
       name: r.name,
-      domain: r.domain,
-      territory: r.territory ?? undefined,
+      description: r.description ?? '',
     };
   }
 
@@ -141,6 +190,7 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
       modality: string;
       result: string;
       context: string;
+      source: string;
       timestamp: number;
     };
     return {
@@ -150,6 +200,28 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
       modality: r.modality as Modality,
       result: r.result as VerificationEvent['result'],
       context: r.context,
+      source: (r.source ?? 'internal') as 'internal' | 'external',
+      timestamp: r.timestamp,
+    };
+  }
+
+  function rowToClaimEvent(row: unknown): ClaimEvent {
+    const r = row as {
+      id: string;
+      person_id: string;
+      concept_id: string;
+      self_reported_confidence: number;
+      context: string;
+      retracted: number;
+      timestamp: number;
+    };
+    return {
+      id: r.id,
+      personId: r.person_id,
+      conceptId: r.concept_id,
+      selfReportedConfidence: r.self_reported_confidence,
+      context: r.context,
+      retracted: r.retracted === 1,
       timestamp: r.timestamp,
     };
   }
@@ -178,14 +250,14 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
   return {
     // --- Nodes ---
     insertNode(node: ConceptNode) {
-      stmts.insertNode.run(node.id, node.name, node.domain, node.territory ?? null);
+      stmts.insertNode.run(node.id, node.name, node.description ?? '');
     },
     getNode(id: string): ConceptNode | null {
       const row = stmts.getNode.get(id);
       return row ? rowToNode(row) : null;
     },
-    getNodesByDomain(domain: string): ConceptNode[] {
-      return stmts.getNodesByDomain.all(domain).map(rowToNode);
+    getAllNodes(): ConceptNode[] {
+      return stmts.getAllNodes.all().map(rowToNode);
     },
 
     // --- Edges ---
@@ -204,6 +276,9 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
     getEdgesTo(conceptId: string): RelationshipEdge[] {
       return stmts.getEdgesTo.all(conceptId).map(rowToEdge);
     },
+    getAllEdges(): RelationshipEdge[] {
+      return stmts.getAllEdges.all().map(rowToEdge);
+    },
     getDownstreamDependents(conceptId: string): string[] {
       return stmts.getDownstreamDependents.all(conceptId).map(
         (row) => (row as { to_concept_id: string }).to_concept_id
@@ -214,11 +289,49 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
     insertVerificationEvent(event: VerificationEvent) {
       stmts.insertVerificationEvent.run(
         event.id, event.personId, event.conceptId, event.modality,
-        event.result, event.context, event.timestamp
+        event.result, event.context, event.source, event.timestamp
       );
+    },
+    getVerificationEvent(id: string): VerificationEvent | null {
+      const row = stmts.getVerificationEvent.get(id);
+      return row ? rowToVerificationEvent(row) : null;
     },
     getVerificationHistory(personId: string, conceptId: string): VerificationEvent[] {
       return stmts.getVerificationHistory.all(personId, conceptId).map(rowToVerificationEvent);
+    },
+
+    // --- Claim Events ---
+    insertClaimEvent(event: ClaimEvent) {
+      stmts.insertClaimEvent.run(
+        event.id, event.personId, event.conceptId,
+        event.selfReportedConfidence, event.context, event.timestamp
+      );
+    },
+    getClaimEvent(id: string): ClaimEvent | null {
+      const row = stmts.getClaimEvent.get(id);
+      return row ? rowToClaimEvent(row) : null;
+    },
+    getClaimHistory(personId: string, conceptId: string): ClaimEvent[] {
+      return stmts.getClaimHistory.all(personId, conceptId).map(rowToClaimEvent);
+    },
+    getLatestClaim(personId: string, conceptId: string): ClaimEvent | null {
+      const row = stmts.getLatestClaim.get(personId, conceptId);
+      return row ? rowToClaimEvent(row) : null;
+    },
+
+    // --- Retractions ---
+    insertRetraction(retraction: StoredRetraction) {
+      stmts.insertRetraction.run(
+        retraction.id, retraction.eventId, retraction.eventType,
+        retraction.reason, retraction.retractedBy, retraction.timestamp
+      );
+    },
+    markEventRetracted(eventId: string, eventType: 'verification' | 'claim') {
+      if (eventType === 'verification') {
+        stmts.markVerificationRetracted.run(eventId);
+      } else {
+        stmts.markClaimRetracted.run(eventId);
+      }
     },
 
     // --- Trust State ---
@@ -235,6 +348,14 @@ export function createSQLiteStore(dbPath: string = ':memory:'): Store {
     },
     getAllTrustStates(personId: string): StoredTrustState[] {
       return stmts.getAllTrustStates.all(personId).map(rowToTrustState);
+    },
+    getTrustStatesForConcepts(personId: string, conceptIds: string[]): StoredTrustState[] {
+      if (conceptIds.length === 0) return [];
+      const placeholders = conceptIds.map(() => '?').join(',');
+      const stmt = db.prepare(
+        `SELECT * FROM trust_states WHERE person_id = ? AND concept_id IN (${placeholders})`
+      );
+      return stmt.all(personId, ...conceptIds).map(rowToTrustState);
     },
 
     // --- Lifecycle ---
