@@ -13,7 +13,7 @@ A domain does NOT contain:
 
 - What counts as "known" — the application decides
 - Who is the claimant and who is the verifier — the application decides
-- How verification happens — the engine and LLM layer decide
+- How verification happens — the engine core and services layer decide
 - What approach should be taken — the person being assessed decides
 - What trust level is required — the application decides
 - Time constraints or deadlines — the application decides
