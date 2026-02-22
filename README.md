@@ -73,6 +73,7 @@ See `apps/terrain/SPEC.md` for the full specification.
 |`docs/domain-schema.md`|The content model — how domains are structured|
 |`docs/philosophy.md`|Intellectual lineage — Code, Fricker, Goldman, Fonagy|
 |`docs/why-llms.md`|Why LLMs are architecturally necessary|
+|`docs/auditability.md`|Audit trail, introspection, what the architecture lets you answer|
 |`docs/repo-structure.md`|Codebase map and build phases|
 
 ## Named after
