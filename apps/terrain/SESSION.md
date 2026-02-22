@@ -2,7 +2,7 @@
 
 ## Current Task
 
-001 — Next.js Project Setup
+002 — Networking Domain Package
 
 ## Quick Status
 
@@ -12,13 +12,13 @@
 | Tech spec | Done |
 | Design system | Done |
 | Tasks | Done (21 tasks: 001-021) |
-| Build | Not started |
+| Build | In progress |
 
 ## Task Progress
 
 | # | Task | Status |
 |---|------|--------|
-| 001 | Next.js Project Setup | Pending |
+| 001 | Next.js Project Setup | Done |
 | 002 | Networking Domain Package | Pending |
 | 003 | App Shell & Layout | Pending |
 | 004 | Conversation UI | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-None — tasks created, build not started.
+001 completed. Next.js + Tailwind + design system tokens + engine imports + tests + build passing.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start with 001 — Next.js project setup.
+Start 002 — Networking domain package.

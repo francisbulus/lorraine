@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/* --- Fonts (self-hosted via fontsource, loaded in layout.tsx) --- */
+
+/* --- Design System Tokens --- */
+:root {
+  /* -- GROUND -- */
+  --ground: #1C1B18;
+  --ground-soft: #242320;
+  --ground-mid: #2E2D28;
+  --ground-raised: #3A3832;
+
+  /* -- CHALK -- */
+  --chalk: #E8E4D9;
+  --chalk-dim: #C8C3B5;
+  --chalk-faint: #9B9788;
+
+  /* -- STONE -- */
+  --stone: #7A766B;
+  --stone-dim: #565349;
+  --stone-faint: #3E3B35;
+
+  /* -- VERIFIED -- */
+  --verified: #5A8A6A;
+  --verified-dim: #3D6349;
+  --verified-faint: #2A4433;
+
+  /* -- INFERRED -- */
+  --inferred: #C4A24E;
+  --inferred-dim: #8B7435;
+  --inferred-faint: #5C4D24;
+
+  /* -- CONTESTED -- */
+  --contested: #B07055;
+  --contested-dim: #7D4E3B;
+  --contested-faint: #4A3028;
+
+  /* -- FOG -- */
+  --fog: #5B6370;
+  --fog-dim: #3E4550;
+  --fog-faint: #2A2F38;
+
+  /* -- LAMP -- */
+  --lamp: #E0B060;
+  --lamp-dim: #A07830;
+  --lamp-glow: rgba(224, 176, 96, 0.08);
+
+  /* -- TRUST STATE ALIASES -- */
+  --trust-verified: var(--verified);
+  --trust-inferred: var(--inferred);
+  --trust-contested: var(--contested);
+  --trust-untested: var(--fog);
+  --trust-decayed: var(--stone);
+
+  /* -- TYPOGRAPHY -- */
+  --font-voice: 'Source Serif 4', Georgia, serif;
+  --font-hand: 'iA Writer Quattro', 'Courier New', monospace;
+  --font-system: 'Geist', system-ui, sans-serif;
+  --font-data: 'IBM Plex Mono', 'Courier New', monospace;
+
+  /* -- TYPE SCALE -- */
+  --text-xs: 0.7rem;
+  --text-sm: 0.8rem;
+  --text-base: 0.95rem;
+  --text-lg: 1.15rem;
+  --text-xl: 1.5rem;
+  --text-2xl: 2.0rem;
+  --text-3xl: 2.8rem;
+
+  /* -- SPACING -- */
+  --space-message: 24px;
+  --space-speaker-change: 32px;
+
+  /* -- ANIMATION -- */
+  --ease-appear: cubic-bezier(0, 0, 0.3, 1);
+  --ease-settle: cubic-bezier(0.2, 0, 0, 1);
+  --ease-retreat: cubic-bezier(0.5, 0, 1, 1);
+
+  /* -- LAYOUT -- */
+  --panel-map-width: 260px;
+  --panel-margin-width: 240px;
+  --panel-conversation-min: 600px;
+  --panel-conversation-max: 800px;
+  --border-radius: 4px;
+}
+
+/* --- Base Styles --- */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--stone-faint) transparent;
+}
+
+body {
+  background-color: var(--ground);
+  color: var(--chalk);
+  font-family: var(--font-system);
+  font-size: var(--text-base);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Paper texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  mix-blend-mode: soft-light;
+  z-index: 9999;
+}
+
+/* --- Utility Classes --- */
+.font-voice { font-family: var(--font-voice); }
+.font-hand { font-family: var(--font-hand); }
+.font-system { font-family: var(--font-system); }
+.font-data { font-family: var(--font-data); }
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
