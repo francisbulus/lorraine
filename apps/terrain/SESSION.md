@@ -2,7 +2,7 @@
 
 ## Current Task
 
-011 — Explain Mode (Phase 2)
+012 — Sandbox Mode (Phase 2)
 
 ## Quick Status
 
@@ -28,7 +28,7 @@
 | 008 | Margin Panel | Done |
 | 009 | Event Visibility & Challengeability | Done |
 | 010 | Session Management | Done |
-| 011 | Explain Mode (Phase 2) | Pending |
+| 011 | Explain Mode (Phase 2) | Done |
 | 012 | Sandbox Mode (Phase 2) | Pending |
 | 013 | Visual Map (Phase 2) | Pending |
 | 014 | Self-Calibration View (Phase 2) | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-010 completed. Session management: session tracking with concepts/events/history, person ID via localStorage, ReturnFlow with neutral decay orientation. Phase 1 complete (001-010). 182 terrain tests, 79 engine tests, zero regressions.
+011 completed. Explain mode: depth ladder (intuition→abstraction→mechanism→implementation), auto-depth selection from trust state + prerequisites, depth adjustment via "simpler"/"deeper" patterns. 212 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 011 — Explain mode (Phase 2).
+Start 012 — Sandbox mode (Phase 2).
