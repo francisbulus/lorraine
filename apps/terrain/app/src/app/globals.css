@@ -846,6 +846,76 @@ a {
   margin-top: 2px;
 }
 
+/* --- Return Flow --- */
+.return-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 32px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.return-flow__orientation {
+  font-size: var(--text-base);
+  color: var(--chalk);
+  line-height: 1.6;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.return-flow__decay {
+  color: var(--chalk-dim);
+}
+
+.return-flow__no-decay {
+  color: var(--stone);
+}
+
+.return-flow__decay-list {
+  font-size: var(--text-xs);
+  color: var(--stone);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.return-flow__days {
+  color: var(--stone-dim);
+  margin-left: 4px;
+}
+
+.return-flow__actions {
+  display: flex;
+  gap: 16px;
+}
+
+.return-flow__resume,
+.return-flow__new {
+  font-size: var(--text-sm);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.return-flow__resume {
+  color: var(--chalk);
+}
+
+.return-flow__new {
+  color: var(--stone);
+}
+
+.return-flow__resume:hover {
+  color: var(--lamp);
+}
+
+.return-flow__new:hover {
+  color: var(--chalk-dim);
+}
+
 /* --- Margin Panel Detail --- */
 .margin-panel__detail {
   animation: margin-crossfade 200ms var(--ease-appear) both;

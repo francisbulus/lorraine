@@ -2,7 +2,7 @@
 
 ## Current Task
 
-010 — Session Management
+011 — Explain Mode (Phase 2)
 
 ## Quick Status
 
@@ -27,7 +27,7 @@
 | 007 | Territory List View (MVP Map) | Done |
 | 008 | Margin Panel | Done |
 | 009 | Event Visibility & Challengeability | Done |
-| 010 | Session Management | Pending |
+| 010 | Session Management | Done |
 | 011 | Explain Mode (Phase 2) | Pending |
 | 012 | Sandbox Mode (Phase 2) | Pending |
 | 013 | Visual Map (Phase 2) | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-009 completed. Event visibility: level-change notifications with auto-dismiss, challenge flow with "test me on this", quiet mode with pending signal buffering. 168 terrain tests, 79 engine tests, zero regressions.
+010 completed. Session management: session tracking with concepts/events/history, person ID via localStorage, ReturnFlow with neutral decay orientation. Phase 1 complete (001-010). 182 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 010 — Session management.
+Start 011 — Explain mode (Phase 2).
