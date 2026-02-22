@@ -1040,6 +1040,114 @@ a {
   text-align: right;
 }
 
+/* --- Self-Calibration --- */
+.self-calibration {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px;
+  max-width: 560px;
+}
+
+.self-calibration__title {
+  font-size: var(--text-lg);
+  color: var(--chalk);
+  font-weight: 400;
+}
+
+.self-calibration__metric {
+  font-size: var(--text-base);
+  color: var(--chalk);
+  line-height: 1.6;
+}
+
+.self-calibration__percent {
+  font-size: var(--text-lg);
+  color: var(--chalk);
+}
+
+.self-calibration__trend {
+  font-size: var(--text-sm);
+  color: var(--chalk-dim);
+  line-height: 1.6;
+}
+
+.self-calibration__empty {
+  font-size: var(--text-base);
+  color: var(--stone);
+}
+
+.self-calibration__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.self-calibration__recommendation {
+  font-size: var(--text-sm);
+  color: var(--stone);
+  line-height: 1.5;
+}
+
+/* --- Calibration Section --- */
+.calibration-section__title {
+  font-size: var(--text-sm);
+  color: var(--chalk-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-weight: 400;
+  margin-bottom: 8px;
+}
+
+.calibration-section[data-category="overclaimed"] .calibration-section__title {
+  color: var(--inferred);
+}
+
+.calibration-section[data-category="underclaimed"] .calibration-section__title {
+  color: var(--verified);
+}
+
+.calibration-section__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calibration-section__item {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: var(--text-sm);
+}
+
+.calibration-section__glyph {
+  font-size: var(--text-xs);
+  flex-shrink: 0;
+}
+
+.calibration-section[data-category="overclaimed"] .calibration-section__glyph {
+  color: var(--inferred);
+}
+
+.calibration-section[data-category="underclaimed"] .calibration-section__glyph {
+  color: var(--verified);
+}
+
+.calibration-section[data-category="aligned"] .calibration-section__glyph {
+  color: var(--verified);
+}
+
+.calibration-section__name {
+  color: var(--chalk);
+}
+
+.calibration-section__detail {
+  font-size: var(--text-xs);
+  color: var(--stone);
+  margin-left: auto;
+}
+
 /* --- Visual Map --- */
 .visual-map {
   cursor: grab;
