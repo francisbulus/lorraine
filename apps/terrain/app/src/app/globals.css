@@ -508,6 +508,230 @@ a {
   line-height: 1;
 }
 
+/* --- Concept Detail (Margin Panel) --- */
+.concept-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.concept-detail__header {
+  box-shadow: 0 0 20px var(--lamp-glow);
+  padding: 8px;
+  border-radius: var(--border-radius);
+  transition: box-shadow 400ms var(--ease-settle);
+}
+
+.concept-detail__name {
+  font-size: var(--text-lg);
+  color: var(--chalk);
+  margin-bottom: 4px;
+  font-weight: 400;
+}
+
+.concept-detail__trust {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  color: var(--stone);
+}
+
+.concept-detail__confidence {
+  margin-left: auto;
+}
+
+.concept-detail__meta {
+  font-size: var(--text-xs);
+  color: var(--stone);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.margin-section-title {
+  font-size: var(--text-xs);
+  color: var(--chalk-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  font-weight: 400;
+}
+
+.concept-detail__related-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.concept-detail__related-item {
+  font-size: var(--text-xs);
+  color: var(--stone);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.concept-detail__edge-type {
+  color: var(--stone-dim);
+  margin-left: 2px;
+}
+
+.concept-detail__reasoning-text {
+  font-size: var(--text-sm);
+  color: var(--chalk-dim);
+  line-height: 1.5;
+}
+
+/* --- Verification History --- */
+.verification-history__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.verification-history__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--stone-faint);
+}
+
+.verification-history__item:last-child {
+  border-bottom: none;
+}
+
+.verification-history__result {
+  font-size: var(--text-xs);
+}
+
+.verification-history__result[data-result="demonstrated"] {
+  color: var(--verified);
+}
+
+.verification-history__result[data-result="failed"] {
+  color: var(--contested);
+}
+
+.verification-history__result[data-result="partial"] {
+  color: var(--inferred);
+}
+
+.verification-history__modality {
+  font-size: var(--text-xs);
+  color: var(--stone);
+}
+
+.verification-history__time {
+  font-size: var(--text-xs);
+  color: var(--stone-dim);
+}
+
+.verification-history__context {
+  font-size: var(--text-xs);
+  color: var(--chalk-dim);
+  margin-top: 2px;
+}
+
+/* --- Claim History --- */
+.claim-history__gap {
+  font-size: var(--text-sm);
+  margin-bottom: 8px;
+}
+
+.claim-history__gap[data-gap="overclaiming"] {
+  color: var(--inferred);
+}
+
+.claim-history__gap[data-gap="underclaiming"] {
+  color: var(--verified);
+}
+
+.claim-history__gap[data-gap="aligned"] {
+  color: var(--stone);
+}
+
+.claim-history__gap-label {
+  color: var(--stone);
+}
+
+.claim-history__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.claim-history__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--stone-faint);
+}
+
+.claim-history__item:last-child {
+  border-bottom: none;
+}
+
+.claim-history__confidence {
+  font-size: var(--text-xs);
+  color: var(--stone);
+}
+
+.claim-history__context {
+  font-size: var(--text-xs);
+  color: var(--chalk-dim);
+  font-style: italic;
+}
+
+.claim-history__time {
+  font-size: var(--text-xs);
+  color: var(--stone-dim);
+}
+
+/* --- Reasoning Trace --- */
+.reasoning-trace__toggle {
+  font-family: var(--font-data);
+  font-size: var(--text-xs);
+  color: var(--chalk-faint);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.reasoning-trace__toggle:hover {
+  color: var(--chalk-dim);
+}
+
+.reasoning-trace__content {
+  font-size: var(--text-sm);
+  color: var(--chalk-dim);
+  line-height: 1.5;
+  margin-top: 6px;
+  padding: 8px;
+  background: var(--ground-soft);
+  border-radius: var(--border-radius);
+}
+
+/* --- Margin Panel Detail --- */
+.margin-panel__detail {
+  animation: margin-crossfade 200ms var(--ease-appear) both;
+}
+
+@keyframes margin-crossfade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 /* --- Responsive: Tablet --- */
 @media (max-width: 1024px) {
   .map-panel--open {

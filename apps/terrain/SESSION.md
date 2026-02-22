@@ -2,7 +2,7 @@
 
 ## Current Task
 
-008 — Margin Panel
+009 — Event Visibility & Challengeability
 
 ## Quick Status
 
@@ -25,7 +25,7 @@
 | 005 | Conversation Loop (Backend) | Done |
 | 006 | Grill Mode | Done |
 | 007 | Territory List View (MVP Map) | Done |
-| 008 | Margin Panel | Pending |
+| 008 | Margin Panel | Done |
 | 009 | Event Visibility & Challengeability | Pending |
 | 010 | Session Management | Pending |
 | 011 | Explain Mode (Phase 2) | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-007 completed. Territory list view: TrustGlyph (● ◐ ○ ◌ ◦), ProgressBar with smooth transitions, TerritoryCard with all design system styling, territory-state aggregation from bulk trust state. MapPanel updated. 119 terrain tests, 79 engine tests, zero regressions.
+008 completed. Margin panel: ConceptDetail with lamp glow, VerificationHistory (sorted, color-coded), ClaimHistory (calibration gap), ReasoningTrace (collapsible). 141 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 008 — Margin panel.
+Start 009 — Event visibility & challengeability.
