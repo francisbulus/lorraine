@@ -2,7 +2,7 @@
 
 ## Current Task
 
-002 — Networking Domain Package
+003 — App Shell & Layout
 
 ## Quick Status
 
@@ -19,7 +19,7 @@
 | # | Task | Status |
 |---|------|--------|
 | 001 | Next.js Project Setup | Done |
-| 002 | Networking Domain Package | Pending |
+| 002 | Networking Domain Package | Done |
 | 003 | App Shell & Layout | Pending |
 | 004 | Conversation UI | Pending |
 | 005 | Conversation Loop (Backend) | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-001 completed. Next.js + Tailwind + design system tokens + engine imports + tests + build passing.
+002 completed. Networking domain with 19 concepts, 26 edges, 5 territories, 4 thresholds. Loads via engine with zero errors.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 002 — Networking domain package.
+Start 003 — App shell and layout.

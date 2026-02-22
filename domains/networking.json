@@ -1,0 +1,195 @@
+{
+  "id": "networking",
+  "name": "Computer Networking",
+  "version": "0.1.0",
+  "concepts": [
+    {
+      "id": "tcp-basics",
+      "name": "TCP Basics",
+      "description": "Transmission Control Protocol fundamentals — what it provides (reliable, ordered, error-checked delivery) and where it sits in the network stack."
+    },
+    {
+      "id": "tcp-handshake",
+      "name": "TCP Handshake",
+      "description": "The three-way handshake (SYN, SYN-ACK, ACK) that establishes a TCP connection. Why three steps are necessary."
+    },
+    {
+      "id": "tcp-sequence-numbers",
+      "name": "Sequence Numbers",
+      "description": "How TCP uses sequence numbers to track bytes in a stream, enable ordering, and detect missing segments."
+    },
+    {
+      "id": "tcp-acknowledgments",
+      "name": "Acknowledgments",
+      "description": "How TCP receivers confirm receipt of data. Cumulative ACKs, duplicate ACKs, and their role in reliability."
+    },
+    {
+      "id": "tcp-retransmission",
+      "name": "Retransmission",
+      "description": "How TCP detects and recovers from lost segments. Timeout-based retransmission and fast retransmit via duplicate ACKs."
+    },
+    {
+      "id": "tcp-flow-control",
+      "name": "Flow Control",
+      "description": "Receiver-side flow control via the sliding window. How the receiver advertises capacity and the sender adapts."
+    },
+    {
+      "id": "tcp-congestion-control",
+      "name": "Congestion Control",
+      "description": "Network-side congestion management. Slow start, congestion avoidance, fast recovery. How TCP infers network capacity."
+    },
+    {
+      "id": "tcp-timers",
+      "name": "TCP Timers",
+      "description": "Retransmission timeout (RTO) calculation, keepalive timers, TIME_WAIT state. How TCP manages time-dependent behaviors."
+    },
+    {
+      "id": "dns-resolution",
+      "name": "DNS Resolution",
+      "description": "How domain names resolve to IP addresses. The recursive query process from stub resolver to authoritative server."
+    },
+    {
+      "id": "dns-hierarchy",
+      "name": "DNS Hierarchy",
+      "description": "The hierarchical namespace structure — root servers, TLD servers, authoritative servers. Delegation and zones."
+    },
+    {
+      "id": "dns-caching",
+      "name": "DNS Caching",
+      "description": "TTL-based caching at resolvers and clients. Cache invalidation, stale records, and negative caching."
+    },
+    {
+      "id": "dns-record-types",
+      "name": "DNS Record Types",
+      "description": "A, AAAA, CNAME, MX, NS, TXT, SOA records. What each type stores and when it's used."
+    },
+    {
+      "id": "http-request-response",
+      "name": "HTTP Request/Response",
+      "description": "The request-response model. How a client sends a request (method, URI, headers, body) and receives a structured response."
+    },
+    {
+      "id": "http-methods",
+      "name": "HTTP Methods",
+      "description": "GET, POST, PUT, DELETE, PATCH, HEAD, OPTIONS. Semantics, idempotency, and safety properties."
+    },
+    {
+      "id": "http-status-codes",
+      "name": "HTTP Status Codes",
+      "description": "The five classes (1xx-5xx). Key codes and their semantics — 200, 301, 304, 400, 401, 403, 404, 500, 503."
+    },
+    {
+      "id": "http-headers",
+      "name": "HTTP Headers",
+      "description": "Request and response headers. Content negotiation, caching directives, authentication, CORS. How headers control behavior."
+    },
+    {
+      "id": "tls-basics",
+      "name": "TLS Basics",
+      "description": "What TLS provides — confidentiality, integrity, authentication. Where it sits in the stack and why it matters."
+    },
+    {
+      "id": "tls-handshake",
+      "name": "TLS Handshake",
+      "description": "The TLS handshake process. Key exchange, cipher suite negotiation, certificate verification. TLS 1.2 vs 1.3 differences."
+    },
+    {
+      "id": "tls-certificates",
+      "name": "TLS Certificates",
+      "description": "X.509 certificates, certificate chains, root CAs, certificate validation. How trust is established."
+    }
+  ],
+  "edges": [
+    { "from": "tcp-basics", "to": "tcp-handshake", "type": "prerequisite", "inferenceStrength": 0.6 },
+    { "from": "tcp-basics", "to": "tcp-sequence-numbers", "type": "prerequisite", "inferenceStrength": 0.5 },
+    { "from": "tcp-sequence-numbers", "to": "tcp-acknowledgments", "type": "prerequisite", "inferenceStrength": 0.7 },
+    { "from": "tcp-acknowledgments", "to": "tcp-retransmission", "type": "component_of", "inferenceStrength": 0.7 },
+    { "from": "tcp-sequence-numbers", "to": "tcp-retransmission", "type": "component_of", "inferenceStrength": 0.6 },
+    { "from": "tcp-basics", "to": "tcp-flow-control", "type": "prerequisite", "inferenceStrength": 0.4 },
+    { "from": "tcp-acknowledgments", "to": "tcp-flow-control", "type": "prerequisite", "inferenceStrength": 0.5 },
+    { "from": "tcp-flow-control", "to": "tcp-congestion-control", "type": "prerequisite", "inferenceStrength": 0.5 },
+    { "from": "tcp-retransmission", "to": "tcp-congestion-control", "type": "related_to", "inferenceStrength": 0.4 },
+    { "from": "tcp-retransmission", "to": "tcp-timers", "type": "prerequisite", "inferenceStrength": 0.6 },
+    { "from": "tcp-basics", "to": "tcp-timers", "type": "prerequisite", "inferenceStrength": 0.3 },
+    { "from": "dns-resolution", "to": "dns-hierarchy", "type": "component_of", "inferenceStrength": 0.7 },
+    { "from": "dns-resolution", "to": "dns-caching", "type": "prerequisite", "inferenceStrength": 0.5 },
+    { "from": "dns-resolution", "to": "dns-record-types", "type": "prerequisite", "inferenceStrength": 0.4 },
+    { "from": "dns-hierarchy", "to": "dns-record-types", "type": "related_to", "inferenceStrength": 0.3 },
+    { "from": "http-request-response", "to": "http-methods", "type": "component_of", "inferenceStrength": 0.7 },
+    { "from": "http-request-response", "to": "http-status-codes", "type": "component_of", "inferenceStrength": 0.6 },
+    { "from": "http-request-response", "to": "http-headers", "type": "component_of", "inferenceStrength": 0.5 },
+    { "from": "http-methods", "to": "http-headers", "type": "related_to", "inferenceStrength": 0.3 },
+    { "from": "dns-resolution", "to": "http-request-response", "type": "prerequisite", "inferenceStrength": 0.3 },
+    { "from": "tcp-basics", "to": "http-request-response", "type": "prerequisite", "inferenceStrength": 0.4 },
+    { "from": "tls-basics", "to": "tls-handshake", "type": "prerequisite", "inferenceStrength": 0.6 },
+    { "from": "tls-basics", "to": "tls-certificates", "type": "prerequisite", "inferenceStrength": 0.5 },
+    { "from": "tls-handshake", "to": "tls-certificates", "type": "component_of", "inferenceStrength": 0.6 },
+    { "from": "tcp-handshake", "to": "tls-handshake", "type": "related_to", "inferenceStrength": 0.4 },
+    { "from": "http-request-response", "to": "tls-basics", "type": "related_to", "inferenceStrength": 0.3 }
+  ],
+  "territories": [
+    {
+      "id": "tcp-reliability",
+      "name": "TCP Reliability",
+      "conceptIds": ["tcp-basics", "tcp-handshake", "tcp-sequence-numbers", "tcp-acknowledgments", "tcp-retransmission"]
+    },
+    {
+      "id": "tcp-advanced",
+      "name": "TCP Advanced",
+      "conceptIds": ["tcp-flow-control", "tcp-congestion-control", "tcp-timers"]
+    },
+    {
+      "id": "dns",
+      "name": "DNS Resolution",
+      "conceptIds": ["dns-resolution", "dns-hierarchy", "dns-caching", "dns-record-types"]
+    },
+    {
+      "id": "http",
+      "name": "HTTP Fundamentals",
+      "conceptIds": ["http-request-response", "http-methods", "http-status-codes", "http-headers"]
+    },
+    {
+      "id": "tls",
+      "name": "TLS Basics",
+      "conceptIds": ["tls-basics", "tls-handshake", "tls-certificates"]
+    }
+  ],
+  "thresholds": [
+    {
+      "id": "tcp-reliability-to-tcp-advanced",
+      "from": "tcp-reliability",
+      "to": "tcp-advanced",
+      "readinessCriteria": {
+        "conceptIds": ["tcp-basics", "tcp-acknowledgments", "tcp-retransmission"],
+        "minimumLevel": "verified"
+      }
+    },
+    {
+      "id": "tcp-reliability-to-http",
+      "from": "tcp-reliability",
+      "to": "http",
+      "readinessCriteria": {
+        "conceptIds": ["tcp-basics", "tcp-handshake"],
+        "minimumLevel": "inferred"
+      }
+    },
+    {
+      "id": "http-to-tls",
+      "from": "http",
+      "to": "tls",
+      "readinessCriteria": {
+        "conceptIds": ["http-request-response", "http-headers"],
+        "minimumLevel": "inferred"
+      }
+    },
+    {
+      "id": "dns-to-http",
+      "from": "dns",
+      "to": "http",
+      "readinessCriteria": {
+        "conceptIds": ["dns-resolution"],
+        "minimumLevel": "inferred"
+      }
+    }
+  ]
+}

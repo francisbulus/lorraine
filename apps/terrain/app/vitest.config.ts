@@ -8,6 +8,7 @@ export default defineConfig({
       '@engine': path.resolve(__dirname, '../../../engine'),
       '@engine-services': path.resolve(__dirname, '../../../engine/services'),
       '@llm': path.resolve(__dirname, '../../../llm'),
+      '@domains': path.resolve(__dirname, '../../../domains'),
     },
   },
   test: {
