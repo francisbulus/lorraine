@@ -15,6 +15,6 @@
     "isolatedModules": true,
     "verbatimModuleSyntax": true
   },
-  "include": ["engine/**/*.ts", "domains/**/*.ts", "tests/**/*.ts"],
+  "include": ["engine/**/*.ts", "llm/**/*.ts", "domains/**/*.ts", "tests/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
