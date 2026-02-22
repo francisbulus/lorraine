@@ -1,9 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import AppShell from './AppShell';
 
 describe('AppShell', () => {
-  it('renders the header with app title', () => {
+  it('renders the top bar with app title', () => {
     render(<AppShell />);
     expect(screen.getByText('terrain')).toBeInTheDocument();
   });
@@ -13,49 +13,28 @@ describe('AppShell', () => {
     expect(screen.getByText('<1 min')).toBeInTheDocument();
   });
 
-  it('renders three panels', () => {
-    render(<AppShell />);
-    expect(screen.getByLabelText('Map')).toBeInTheDocument();
-    expect(screen.getByLabelText('Conversation')).toBeInTheDocument();
-    expect(screen.getByLabelText('Margin')).toBeInTheDocument();
-  });
-
-  it('renders the bottom bar with four zones', () => {
-    render(<AppShell />);
-    expect(screen.getByLabelText('Zone navigation')).toBeInTheDocument();
-    expect(screen.getByText('Map')).toBeInTheDocument();
-    expect(screen.getByText('Conversation')).toBeInTheDocument();
-    expect(screen.getByText('Modes')).toBeInTheDocument();
-    expect(screen.getByText('Calibration')).toBeInTheDocument();
-  });
-
-  it('renders the first session empty state', () => {
+  it('renders conversation state by default', () => {
     render(<AppShell />);
     expect(screen.getByText('What do you want to learn?')).toBeInTheDocument();
   });
 
-  it('toggles map panel when Map zone is clicked', () => {
+  it('renders map toggle in top bar', () => {
     render(<AppShell />);
-    const mapPanel = screen.getByLabelText('Map');
-    expect(mapPanel.className).toContain('map-panel--open');
-
-    fireEvent.click(screen.getByText('Map'));
-    expect(mapPanel.className).toContain('map-panel--closed');
-
-    fireEvent.click(screen.getByText('Map'));
-    expect(mapPanel.className).toContain('map-panel--open');
+    expect(screen.getByText('map')).toBeInTheDocument();
   });
 
-  it('toggles margin panel when Calibration zone is clicked', () => {
+  it('switches to map state when toggle clicked', () => {
     render(<AppShell />);
-    const marginPanel = screen.getByLabelText('Margin');
-    expect(marginPanel.className).toContain('margin-panel--open');
+    fireEvent.click(screen.getByText('map'));
+    expect(screen.getByText('← conversation')).toBeInTheDocument();
+    expect(screen.queryByText('What do you want to learn?')).not.toBeInTheDocument();
+  });
 
-    fireEvent.click(screen.getByText('Calibration'));
-    expect(marginPanel.className).toContain('margin-panel--closed');
-
-    fireEvent.click(screen.getByText('Calibration'));
-    expect(marginPanel.className).toContain('margin-panel--open');
+  it('switches back to conversation from map', () => {
+    render(<AppShell />);
+    fireEvent.click(screen.getByText('map'));
+    fireEvent.click(screen.getByText('← conversation'));
+    expect(screen.getByText('What do you want to learn?')).toBeInTheDocument();
   });
 
   it('renders input field with font-hand class', () => {
@@ -63,5 +42,22 @@ describe('AppShell', () => {
     const input = screen.getByLabelText('Your message');
     expect(input).toBeInTheDocument();
     expect(input.className).toContain('font-hand');
+  });
+
+  it('does not show calibration glyph when no data', () => {
+    render(<AppShell />);
+    expect(screen.queryByLabelText('Open calibration')).not.toBeInTheDocument();
+  });
+
+  it('has no bottom bar', () => {
+    render(<AppShell />);
+    expect(screen.queryByLabelText('Zone navigation')).not.toBeInTheDocument();
+    expect(screen.queryByText('Modes')).not.toBeInTheDocument();
+  });
+
+  it('does not render three-column panels', () => {
+    render(<AppShell />);
+    expect(screen.queryByLabelText('Map')).not.toBeInTheDocument();
+    expect(screen.queryByLabelText('Margin')).not.toBeInTheDocument();
   });
 });

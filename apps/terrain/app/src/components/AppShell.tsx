@@ -1,60 +1,127 @@
 'use client';
 
-import { useState } from 'react';
-import MapPanel from './MapPanel';
+import { useState, useEffect, useCallback } from 'react';
+import TopBar from './TopBar';
+import type { AppState } from './TopBar';
 import ConversationPanel from './ConversationPanel';
-import MarginPanel from './MarginPanel';
-import BottomBar from './BottomBar';
+import MapView from './MapView';
+import Drawer from './Drawer';
+import ConceptDetail from './ConceptDetail';
+import SelfCalibration from './SelfCalibration';
+import type { ConceptDetailProps } from './ConceptDetail';
+import type { SelfCalibrationProps } from './SelfCalibration';
+import type { VisualMapConcept, VisualMapEdge } from './VisualMap';
+import type { TerritoryState } from '../lib/territory-state';
 
-export type ActiveZone = 'map' | 'conversation' | 'modes' | 'calibration';
+export interface DrawerState {
+  type: 'concept' | 'calibration';
+  conceptDetail?: ConceptDetailProps;
+  calibrationData?: SelfCalibrationProps;
+}
 
 export default function AppShell() {
-  const [mapOpen, setMapOpen] = useState(true);
-  const [marginOpen, setMarginOpen] = useState(true);
-  const [activeZone, setActiveZone] = useState<ActiveZone>('conversation');
+  const [appState, setAppState] = useState<AppState>('conversation');
   const [sessionStart] = useState(() => Date.now());
+  const [drawer, setDrawer] = useState<DrawerState | null>(null);
 
-  function handleZoneClick(zone: ActiveZone) {
-    setActiveZone(zone);
-    if (zone === 'map') {
-      setMapOpen((prev) => !prev);
-    } else if (zone === 'calibration') {
-      setMarginOpen((prev) => !prev);
+  // Placeholder data — will be wired to real sources in later tasks.
+  const [concepts] = useState<VisualMapConcept[]>([]);
+  const [edges] = useState<VisualMapEdge[]>([]);
+  const [territories] = useState<TerritoryState[]>([]);
+
+  const toggleState = useCallback(() => {
+    setAppState((s) => (s === 'conversation' ? 'map' : 'conversation'));
+  }, []);
+
+  const openCalibrationDrawer = useCallback(() => {
+    setDrawer({ type: 'calibration' });
+  }, []);
+
+  const closeDrawer = useCallback(() => {
+    setDrawer(null);
+  }, []);
+
+  const handleConceptClick = useCallback((conceptId: string) => {
+    // In a wired app, this would load concept detail from engine.
+    // For now, open drawer with placeholder.
+    setDrawer({
+      type: 'concept',
+      conceptDetail: {
+        conceptName: conceptId,
+        trustState: {
+          conceptId,
+          personId: '',
+          level: 'untested',
+          decayedConfidence: 0,
+          rawConfidence: 0,
+          modalitiesTested: [],
+          verificationCount: 0,
+          lastVerified: null,
+          verificationHistory: [],
+          claimHistory: [],
+          calibrationGap: null,
+        },
+      },
+    });
+  }, []);
+
+  // Keyboard shortcuts.
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      const mod = e.metaKey || e.ctrlKey;
+      if (mod && e.key === 'm') {
+        e.preventDefault();
+        toggleState();
+      }
+      if (mod && e.key === '.') {
+        e.preventDefault();
+        // Toggle context drawer — if open, close; if closed, no-op (needs a concept).
+        if (drawer?.type === 'concept') {
+          closeDrawer();
+        }
+      }
     }
-  }
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [toggleState, closeDrawer, drawer]);
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <span className="app-title font-system">terrain</span>
-        <SessionDuration startTime={sessionStart} />
-      </header>
+      <TopBar
+        appState={appState}
+        onToggleState={toggleState}
+        onCalibrationClick={openCalibrationDrawer}
+        sessionStart={sessionStart}
+        hasCalibrationData={false}
+      />
 
-      <div className="app-panels">
-        <MapPanel open={mapOpen} />
-        <ConversationPanel />
-        <MarginPanel open={marginOpen} />
+      <div className="app-main">
+        {appState === 'conversation' ? (
+          <div className="conversation-state">
+            <ConversationPanel />
+          </div>
+        ) : (
+          <MapView
+            concepts={concepts}
+            edges={edges}
+            territories={territories}
+            onConceptClick={handleConceptClick}
+          />
+        )}
       </div>
 
-      <BottomBar activeZone={activeZone} onZoneClick={handleZoneClick} />
+      <Drawer
+        open={drawer !== null}
+        onClose={closeDrawer}
+        ariaLabel={drawer?.type === 'calibration' ? 'Calibration' : 'Concept detail'}
+      >
+        {drawer?.type === 'concept' && drawer.conceptDetail && (
+          <ConceptDetail {...drawer.conceptDetail} />
+        )}
+        {drawer?.type === 'calibration' && drawer.calibrationData && (
+          <SelfCalibration {...drawer.calibrationData} />
+        )}
+      </Drawer>
     </div>
-  );
-}
-
-function SessionDuration({ startTime }: { startTime: number }) {
-  const [, setTick] = useState(0);
-
-  // Update every minute
-  if (typeof window !== 'undefined') {
-    setTimeout(() => setTick((t) => t + 1), 60_000);
-  }
-
-  const elapsed = Math.floor((Date.now() - startTime) / 60_000);
-  const display = elapsed < 1 ? '<1 min' : `${elapsed} min`;
-
-  return (
-    <span className="session-duration font-data">
-      {display}
-    </span>
   );
 }
