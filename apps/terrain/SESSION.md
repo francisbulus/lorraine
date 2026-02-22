@@ -2,7 +2,7 @@
 
 ## Current Task
 
-015 — Mode Transitions (Phase 2)
+016 — Threshold Surfacing (Phase 3)
 
 ## Quick Status
 
@@ -32,7 +32,7 @@
 | 012 | Sandbox Mode (Phase 2) | Done |
 | 013 | Visual Map (Phase 2) | Done |
 | 014 | Self-Calibration View (Phase 2) | Done |
-| 015 | Mode Transitions (Phase 2) | Pending |
+| 015 | Mode Transitions (Phase 2) | Done |
 | 016 | Threshold Surfacing (Phase 3) | Pending |
 | 017 | Write Mode (Phase 3) | Pending |
 | 018 | Sketch Mode (Phase 3) | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-014 completed. Self-calibration view: calibration data layer (claim-evidence gap categorization ±0.1 threshold), SelfCalibration component (key metric, trend, aligned/overclaimed/underclaimed sections, engine recommendation), reflective language. 298 terrain tests, 79 engine tests, zero regressions.
+015 completed. Mode transitions: learner-initiated detection (write before explain pattern ordering), agent-suggested transitions (8 context-based rules), createModeManager stateful tracker. Phase 2 complete. 323 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 015 — Mode Transitions (Phase 2).
+Start 016 — Threshold Surfacing (Phase 3).
