@@ -59,7 +59,7 @@ export default function CodeEditor({
       />
       <div className="code-editor__actions">
         <button
-          className="code-editor__run font-system"
+          className="code-editor__run font-data"
           onClick={() => onRun(code)}
           disabled={disabled || !code.trim()}
         >

@@ -1271,7 +1271,7 @@ a {
 .code-editor__textarea {
   font-size: var(--text-sm);
   color: var(--chalk);
-  background: var(--ground);
+  background: var(--ground-mid);
   border: none;
   outline: none;
   padding: 12px;
@@ -1284,7 +1284,7 @@ a {
 }
 
 .code-editor__textarea:focus {
-  background: var(--ground-soft);
+  background: var(--ground-raised);
 }
 
 .code-editor__actions {
@@ -1296,7 +1296,7 @@ a {
 
 .code-editor__run {
   font-size: var(--text-sm);
-  color: var(--chalk);
+  color: var(--chalk-dim);
   background: none;
   border: none;
   cursor: pointer;
