@@ -1,7 +1,9 @@
 'use client';
 
 import Conversation from './Conversation';
+import Sandbox from './Sandbox';
 import type { ConversationMessage, TrustUpdate } from './Conversation';
+import type { ExecutionResult } from '../lib/code-executor';
 
 export interface ConversationPanelProps {
   messages: ConversationMessage[];
@@ -9,6 +11,14 @@ export interface ConversationPanelProps {
   onSubmit: (text: string) => void;
   loading: boolean;
   error: string | null;
+  sandboxActive?: boolean;
+  sandboxConceptId?: string | null;
+  onSandboxRun?: (code: string) => Promise<{
+    execution: ExecutionResult;
+    annotation: string;
+    suggestion: string | null;
+  }>;
+  onSandboxClose?: () => void;
 }
 
 export default function ConversationPanel({
@@ -17,6 +27,10 @@ export default function ConversationPanel({
   onSubmit,
   loading,
   error,
+  sandboxActive = false,
+  sandboxConceptId = null,
+  onSandboxRun,
+  onSandboxClose,
 }: ConversationPanelProps) {
   const hasMessages = messages.length > 0;
 
@@ -55,6 +69,13 @@ export default function ConversationPanel({
         onSubmit={onSubmit}
         disabled={loading}
       />
+      {sandboxActive && sandboxConceptId && onSandboxRun && (
+        <Sandbox
+          conceptId={sandboxConceptId}
+          onRun={onSandboxRun}
+          onClose={onSandboxClose}
+        />
+      )}
       {loading && (
         <div className="conversation-panel__loading font-data">
           thinking...

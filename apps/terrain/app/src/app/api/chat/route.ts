@@ -106,7 +106,8 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as {
       message?: string;
       sessionId?: string;
-      action?: 'init' | 'chat' | 'state';
+      action?: 'init' | 'chat' | 'state' | 'sandbox-run' | 'end-mode';
+      code?: string;
     };
 
     const sessionId =
@@ -125,6 +126,7 @@ export async function POST(request: NextRequest) {
           conceptCount: session.domain.concepts.length,
           territoryCount: session.domain.territories.length,
         },
+        mode: session.loop.getCurrentMode(),
         ...state,
       });
     }
@@ -132,7 +134,57 @@ export async function POST(request: NextRequest) {
     // State action: return current state without processing a message.
     if (action === 'state') {
       const state = getSessionState(session);
-      return NextResponse.json({ sessionId, ...state });
+      return NextResponse.json({
+        sessionId,
+        mode: session.loop.getCurrentMode(),
+        ...state,
+      });
+    }
+
+    // Sandbox-run action: execute code in the active sandbox.
+    if (action === 'sandbox-run') {
+      if (!body.code || typeof body.code !== 'string') {
+        return NextResponse.json(
+          { error: 'code is required for sandbox-run' },
+          { status: 400 }
+        );
+      }
+
+      if (!session.loop.isSandboxActive()) {
+        return NextResponse.json(
+          { error: 'No active sandbox' },
+          { status: 400 }
+        );
+      }
+
+      const result = await session.loop.runSandboxCode(body.code);
+      const state = getSessionState(session);
+
+      return NextResponse.json({
+        sessionId,
+        execution: result.execution,
+        annotation: result.annotation,
+        suggestion: result.suggestion,
+        trustUpdates: result.trustUpdates,
+        mode: session.loop.getCurrentMode(),
+        ...state,
+      });
+    }
+
+    // End-mode action: close current mode and return to conversation.
+    if (action === 'end-mode') {
+      if (session.loop.isSandboxActive()) {
+        session.loop.endSandbox();
+      } else if (session.loop.getCurrentMode() === 'explain') {
+        session.loop.endExplanation();
+      }
+
+      const state = getSessionState(session);
+      return NextResponse.json({
+        sessionId,
+        mode: session.loop.getCurrentMode(),
+        ...state,
+      });
     }
 
     // Chat action: process a message.
@@ -150,6 +202,13 @@ export async function POST(request: NextRequest) {
       sessionId,
       agentResponse: result.agentResponse,
       trustUpdates: result.trustUpdates,
+      mode: result.mode,
+      sandboxStarted: result.sandboxStarted,
+      explainResult: result.explainResult ? {
+        depth: result.explainResult.depth,
+        conceptId: result.explainResult.conceptId,
+      } : undefined,
+      transitionSuggestion: result.transitionSuggestion,
       ...state,
     });
   } catch (error) {

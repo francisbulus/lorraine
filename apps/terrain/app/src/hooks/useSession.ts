@@ -6,6 +6,9 @@ import type { TerritoryState } from '../lib/territory-state';
 import type { VisualMapConcept, VisualMapEdge } from '../components/VisualMap';
 import type { CalibrationData } from '../lib/calibration-data';
 import type { TrustState } from '@engine/types';
+import type { ExecutionResult } from '../lib/code-executor';
+
+export type Mode = 'conversation' | 'explain' | 'sandbox' | 'grill' | 'write';
 
 export interface SessionState {
   sessionId: string | null;
@@ -19,6 +22,15 @@ export interface SessionState {
   loading: boolean;
   error: string | null;
   initialized: boolean;
+  mode: Mode;
+  sandboxActive: boolean;
+  sandboxConceptId: string | null;
+}
+
+export interface SandboxRunResponse {
+  execution: ExecutionResult;
+  annotation: string;
+  suggestion: string | null;
 }
 
 export function useSession() {
@@ -34,6 +46,9 @@ export function useSession() {
     loading: false,
     error: null,
     initialized: false,
+    mode: 'conversation',
+    sandboxActive: false,
+    sandboxConceptId: null,
   });
 
   const messageCounter = useRef(0);
@@ -103,6 +118,9 @@ export function useSession() {
         territories: data.territories ?? prev.territories,
         calibration: data.calibration ?? prev.calibration,
         loading: false,
+        mode: data.mode ?? prev.mode,
+        sandboxActive: !!data.sandboxStarted || (data.mode === 'sandbox' && prev.sandboxActive),
+        sandboxConceptId: data.sandboxStarted?.conceptId ?? (data.mode === 'sandbox' ? prev.sandboxConceptId : null),
       }));
     } catch (err) {
       setState((prev) => ({
@@ -111,6 +129,87 @@ export function useSession() {
         error: err instanceof Error ? err.message : 'Something went wrong',
       }));
     }
+  }, [state.sessionId]);
+
+  const runSandboxCode = useCallback(async (code: string): Promise<SandboxRunResponse> => {
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'sandbox-run',
+          code,
+          sessionId: state.sessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Build trust updates from sandbox signals.
+      const newTrustUpdates: TrustUpdate[] = (data.trustUpdates ?? []).map(
+        (u: { conceptId: string; newLevel: string; reason: string }) => ({
+          id: `tu_${++trustUpdateCounter.current}`,
+          afterMessageId: `sandbox_run_${Date.now()}`,
+          conceptId: u.conceptId,
+          newLevel: u.newLevel,
+          reason: u.reason,
+        })
+      );
+
+      setState((prev) => ({
+        ...prev,
+        trustUpdates: [...prev.trustUpdates, ...newTrustUpdates],
+        trustStates: data.trustStates ?? prev.trustStates,
+        concepts: data.concepts ?? prev.concepts,
+        edges: data.edges ?? prev.edges,
+        territories: data.territories ?? prev.territories,
+        calibration: data.calibration ?? prev.calibration,
+      }));
+
+      return {
+        execution: data.execution,
+        annotation: data.annotation,
+        suggestion: data.suggestion,
+      };
+    } catch (err) {
+      return {
+        execution: {
+          success: false,
+          output: '',
+          error: err instanceof Error ? err.message : 'Sandbox error',
+          duration: 0,
+        },
+        annotation: '',
+        suggestion: null,
+      };
+    }
+  }, [state.sessionId]);
+
+  const closeSandbox = useCallback(async () => {
+    try {
+      await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'end-mode',
+          sessionId: state.sessionId,
+        }),
+      });
+    } catch {
+      // Best-effort close.
+    }
+
+    setState((prev) => ({
+      ...prev,
+      sandboxActive: false,
+      sandboxConceptId: null,
+      mode: 'conversation',
+    }));
   }, [state.sessionId]);
 
   const initSession = useCallback(async () => {
@@ -136,6 +235,7 @@ export function useSession() {
         territories: data.territories ?? [],
         trustStates: data.trustStates ?? {},
         calibration: data.calibration ?? null,
+        mode: data.mode ?? 'conversation',
         initialized: true,
       }));
     } catch (err) {
@@ -159,5 +259,7 @@ export function useSession() {
     sendMessage,
     initSession,
     getTrustStateForConcept,
+    runSandboxCode,
+    closeSandbox,
   };
 }

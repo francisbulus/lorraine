@@ -101,6 +101,10 @@ export default function AppShell() {
               onSubmit={session.sendMessage}
               loading={session.loading}
               error={session.error}
+              sandboxActive={session.sandboxActive}
+              sandboxConceptId={session.sandboxConceptId}
+              onSandboxRun={session.runSandboxCode}
+              onSandboxClose={session.closeSandbox}
             />
           </div>
         ) : (

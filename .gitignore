@@ -1,3 +1,7 @@
 node_modules/
 dist/
 *.db
+.env.local
+.env*.local
+.next/
+next-env.d.ts

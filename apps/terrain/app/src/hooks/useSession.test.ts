@@ -214,4 +214,153 @@ describe('useSession', () => {
     expect(result.current.error).toBe('Init failed');
     expect(result.current.initialized).toBe(true);
   });
+
+  it('tracks mode from chat response', async () => {
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        sessionId: 'test-session',
+        agentResponse: 'Here is how TCP works.',
+        trustUpdates: [],
+        mode: 'explain',
+        concepts: [],
+        edges: [],
+        territories: [],
+        trustStates: {},
+        calibration: null,
+      }),
+    } as Response);
+
+    const { result } = renderHook(() => useSession());
+
+    await act(async () => {
+      await result.current.sendMessage('What is TCP?');
+    });
+
+    expect(result.current.mode).toBe('explain');
+  });
+
+  it('tracks sandbox state from sandboxStarted response', async () => {
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        sessionId: 'test-session',
+        agentResponse: 'Try writing some code.',
+        trustUpdates: [],
+        mode: 'sandbox',
+        sandboxStarted: { conceptId: 'tcp-basics' },
+        concepts: [],
+        edges: [],
+        territories: [],
+        trustStates: {},
+        calibration: null,
+      }),
+    } as Response);
+
+    const { result } = renderHook(() => useSession());
+
+    await act(async () => {
+      await result.current.sendMessage('Let me try that in code');
+    });
+
+    expect(result.current.sandboxActive).toBe(true);
+    expect(result.current.sandboxConceptId).toBe('tcp-basics');
+    expect(result.current.mode).toBe('sandbox');
+  });
+
+  it('runSandboxCode returns execution result', async () => {
+    // First call: init sandbox via chat
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        sessionId: 'test-session',
+        agentResponse: 'Try it.',
+        trustUpdates: [],
+        mode: 'sandbox',
+        sandboxStarted: { conceptId: 'tcp-basics' },
+        concepts: [],
+        edges: [],
+        territories: [],
+        trustStates: {},
+        calibration: null,
+      }),
+    } as Response);
+
+    const { result } = renderHook(() => useSession());
+
+    await act(async () => {
+      await result.current.sendMessage('Can I try in code?');
+    });
+
+    // Second call: run sandbox code
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        sessionId: 'test-session',
+        execution: { success: true, output: 'hello', error: null, duration: 5 },
+        annotation: 'The code logs a string.',
+        suggestion: null,
+        trustUpdates: [],
+        mode: 'sandbox',
+        concepts: [],
+        edges: [],
+        territories: [],
+        trustStates: {},
+        calibration: null,
+      }),
+    } as Response);
+
+    let sandboxResult: Awaited<ReturnType<typeof result.current.runSandboxCode>>;
+    await act(async () => {
+      sandboxResult = await result.current.runSandboxCode('console.log("hello")');
+    });
+
+    expect(sandboxResult!.execution.success).toBe(true);
+    expect(sandboxResult!.execution.output).toBe('hello');
+    expect(sandboxResult!.annotation).toBe('The code logs a string.');
+  });
+
+  it('closeSandbox resets sandbox state', async () => {
+    // Setup sandbox active state
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        sessionId: 'test-session',
+        agentResponse: 'Try it.',
+        trustUpdates: [],
+        mode: 'sandbox',
+        sandboxStarted: { conceptId: 'tcp-basics' },
+        concepts: [],
+        edges: [],
+        territories: [],
+        trustStates: {},
+        calibration: null,
+      }),
+    } as Response);
+
+    const { result } = renderHook(() => useSession());
+
+    await act(async () => {
+      await result.current.sendMessage('Can I try in code?');
+    });
+
+    expect(result.current.sandboxActive).toBe(true);
+
+    // Close sandbox
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        sessionId: 'test-session',
+        mode: 'conversation',
+      }),
+    } as Response);
+
+    await act(async () => {
+      await result.current.closeSandbox();
+    });
+
+    expect(result.current.sandboxActive).toBe(false);
+    expect(result.current.sandboxConceptId).toBeNull();
+    expect(result.current.mode).toBe('conversation');
+  });
 });

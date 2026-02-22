@@ -50,7 +50,7 @@
 
 ## Last Session
 
-017 completed. App wiring: enhanced API route with init/chat/state actions returning full trust+graph+territory+calibration state, useSession hook managing all client state, ConversationPanel rewritten with live Conversation component, AppShell wired to session data feeding MapView/drawers/calibration. Renumbered tasks 017-022 → 018-023. 363 terrain tests, 79 engine tests, zero regressions.
+Mode wiring: wired explain mode, sandbox mode, and mode transitions into the conversation loop. conversation-loop.ts now routes through mode manager (learner transitions + agent suggestions), explain engine (depth-calibrated explanations, simpler/deeper adjustment), and sandbox engine (inline code execution with signal extraction). API route gained sandbox-run and end-mode actions, returns mode state. useSession hook tracks mode/sandboxActive/sandboxConceptId, exposes runSandboxCode/closeSandbox. ConversationPanel renders Sandbox inline when active. AppShell passes sandbox props through. 378 terrain tests (+15 new), 79 engine tests, zero regressions.
 
 ## Blockers
 

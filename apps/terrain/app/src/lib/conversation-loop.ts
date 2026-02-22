@@ -15,6 +15,23 @@ import {
   type GrillResult,
   type PendingGrill,
 } from './grill-engine';
+import {
+  createExplainEngine,
+  detectExplainRequest,
+  detectDepthAdjustment,
+  type ExplainResult,
+} from './explain-engine';
+import {
+  createSandboxEngine,
+  detectSandboxRequest,
+  type SandboxRunResult,
+} from './sandbox-engine';
+import {
+  createModeManager,
+  type Mode,
+  type TransitionSuggestion,
+} from './mode-transition';
+import type { ExecutionResult } from './code-executor';
 
 export interface ConversationTurn {
   role: 'agent' | 'learner';
@@ -33,6 +50,17 @@ export interface ConversationLoopResult {
   candidateSignals: ImplicitSignal[];
   grillStarted?: PendingGrill;
   grillResult?: GrillResult;
+  mode: Mode;
+  explainResult?: ExplainResult;
+  sandboxStarted?: { conceptId: string };
+  transitionSuggestion?: TransitionSuggestion;
+}
+
+export interface SandboxCodeResult {
+  execution: ExecutionResult;
+  annotation: string;
+  suggestion: string | null;
+  trustUpdates: TrustUpdateResult[];
 }
 
 export interface ConversationLoopConfig {
@@ -61,12 +89,11 @@ export function createConversationLoop(config: ConversationLoopConfig) {
   const history: ConversationTurn[] = [];
   const deduplicator = new SignalDeduplicator();
   const grillEngine = createGrillEngine({ store, llm, personId, conceptIds });
+  const explainEngine = createExplainEngine({ store, llm, personId, conceptIds });
+  const sandboxEngine = createSandboxEngine({ store, llm, personId, conceptIds });
+  const modeManager = createModeManager();
 
-  async function processUtterance(utterance: string): Promise<ConversationLoopResult> {
-    history.push({ role: 'learner', content: utterance });
-    const now = Date.now();
-
-    // 1. Build current trust state map for known concepts.
+  function buildTrustStates(now: number): Record<string, TrustState> {
     const trustStates: Record<string, TrustState> = {};
     for (const cid of conceptIds) {
       trustStates[cid] = getTrustState(store, {
@@ -75,45 +102,27 @@ export function createConversationLoop(config: ConversationLoopConfig) {
         asOfTimestamp: now,
       });
     }
-
-    // Check if we're processing a grill response.
-    if (grillEngine.hasPendingGrill()) {
-      return processGrillResponseTurn(utterance, trustStates);
-    }
-
-    // Check if the learner is requesting self-verification.
-    const grillRequest = detectGrillRequest(utterance, conceptIds);
-    if (grillRequest) {
-      return startGrillTurn(grillRequest.conceptId, trustStates);
-    }
-
-    // Normal conversation flow.
-    return processNormalTurn(utterance, now, trustStates);
+    return trustStates;
   }
 
-  async function processNormalTurn(
+  async function extractAndWriteSignals(
     utterance: string,
     now: number,
     trustStates: Record<string, TrustState>
-  ): Promise<ConversationLoopResult> {
-    // 2. Extract implicit signals.
+  ): Promise<{ trustUpdates: TrustUpdateResult[]; candidateSignals: ImplicitSignal[] }> {
     const signals = await extractImplicitSignals(llm, {
       utterance,
-      conversationHistory: history.map(t => `${t.role}: ${t.content}`),
+      conversationHistory: history.map((t) => `${t.role}: ${t.content}`),
       personId,
       currentTrustState: trustStates,
     });
 
-    // 3. Apply signal write policy.
     const { write: writeSignals, candidate: candidateSignals } =
       applySignalWritePolicy(signals, trustStates);
 
-    // 4. Deduplicate and write qualifying signals to core.
     const trustUpdates: TrustUpdateResult[] = [];
     for (const signal of writeSignals) {
-      if (deduplicator.isDuplicate(signal, now)) {
-        continue;
-      }
+      if (deduplicator.isDuplicate(signal, now)) continue;
 
       const modality = signalTypeToModality(signal.signalType);
       const result = signalTypeToResult(signal.signalType);
@@ -129,7 +138,6 @@ export function createConversationLoop(config: ConversationLoopConfig) {
       });
 
       trustStates[signal.conceptId] = updated;
-
       trustUpdates.push({
         conceptId: signal.conceptId,
         newLevel: updated.level,
@@ -137,7 +145,13 @@ export function createConversationLoop(config: ConversationLoopConfig) {
       });
     }
 
-    // 5. Extract claims.
+    return { trustUpdates, candidateSignals };
+  }
+
+  async function extractAndRecordClaims(
+    utterance: string,
+    now: number
+  ): Promise<void> {
     const claims = await extractClaims(llm, utterance, conceptIds);
     for (const claim of claims) {
       recordClaim(store, {
@@ -148,8 +162,183 @@ export function createConversationLoop(config: ConversationLoopConfig) {
         timestamp: now,
       });
     }
+  }
 
-    // 6. Generate agent response.
+  async function processUtterance(utterance: string): Promise<ConversationLoopResult> {
+    history.push({ role: 'learner', content: utterance });
+    const now = Date.now();
+    const trustStates = buildTrustStates(now);
+
+    // Mode transition detection.
+    const { learnerTransition, agentSuggestion } = modeManager.processUtterance(utterance);
+
+    if (learnerTransition) {
+      modeManager.setMode(learnerTransition);
+      if (learnerTransition !== 'explain') explainEngine.endExplanation();
+      if (learnerTransition !== 'sandbox') sandboxEngine.endSandbox();
+    }
+
+    // 1. Grill response takes highest priority — there's a pending question.
+    if (grillEngine.hasPendingGrill()) {
+      const result = await processGrillResponseTurn(utterance, trustStates);
+      if (result.grillResult) {
+        modeManager.recordGrillResult(result.grillResult.result);
+      }
+      modeManager.recordTurn();
+      return appendTransitionSuggestion(
+        { ...result, mode: modeManager.getCurrentMode() },
+        agentSuggestion
+      );
+    }
+
+    // 2. Grill request.
+    const grillRequest = detectGrillRequest(utterance, conceptIds);
+    if (learnerTransition === 'grill' || grillRequest) {
+      if (modeManager.getCurrentMode() !== 'grill') modeManager.setMode('grill');
+      const result = await startGrillTurn(grillRequest?.conceptId ?? null, trustStates);
+      modeManager.recordTurn();
+      return { ...result, mode: modeManager.getCurrentMode() };
+    }
+
+    // 3. Explain mode — depth adjustment or new explanation.
+    const depthAdj = detectDepthAdjustment(utterance);
+    const explainReq = detectExplainRequest(utterance, conceptIds);
+
+    if (explainEngine.isExplaining() && depthAdj) {
+      const result = await processExplainAdjustment(depthAdj);
+      modeManager.recordTurn();
+      return appendTransitionSuggestion(result, agentSuggestion);
+    }
+
+    if (explainReq) {
+      if (modeManager.getCurrentMode() !== 'explain') modeManager.setMode('explain');
+      const result = await processExplainStart(
+        explainReq.conceptId,
+        utterance,
+        now,
+        trustStates
+      );
+      modeManager.recordTurn();
+      return appendTransitionSuggestion(result, agentSuggestion);
+    }
+
+    // 4. Sandbox request.
+    const sandboxReq = detectSandboxRequest(utterance, conceptIds);
+    if (sandboxReq && !sandboxEngine.isSandboxActive()) {
+      modeManager.setMode('sandbox');
+      const result = await processStartSandbox(
+        sandboxReq.conceptId,
+        utterance,
+        now,
+        trustStates
+      );
+      modeManager.recordTurn();
+      return appendTransitionSuggestion(result, agentSuggestion);
+    }
+
+    // 5. Normal conversation flow.
+    const result = await processNormalTurn(utterance, now, trustStates);
+    for (const u of result.trustUpdates) {
+      modeManager.addTrustUpdate(u.conceptId, u.newLevel);
+    }
+    modeManager.recordTurn();
+    return appendTransitionSuggestion(result, agentSuggestion);
+  }
+
+  function appendTransitionSuggestion(
+    result: ConversationLoopResult,
+    suggestion: TransitionSuggestion | null
+  ): ConversationLoopResult {
+    if (!suggestion) return result;
+    const updatedResponse = result.agentResponse + '\n\n' + suggestion.suggestion;
+    // Update the last history entry to include the suggestion.
+    if (history.length > 0 && history[history.length - 1].role === 'agent') {
+      history[history.length - 1].content = updatedResponse;
+    }
+    return { ...result, agentResponse: updatedResponse, transitionSuggestion: suggestion };
+  }
+
+  async function processExplainStart(
+    conceptId: string | null,
+    utterance: string,
+    now: number,
+    trustStates: Record<string, TrustState>
+  ): Promise<ConversationLoopResult> {
+    // Extract signals from the explain request utterance.
+    const { trustUpdates, candidateSignals } =
+      await extractAndWriteSignals(utterance, now, trustStates);
+
+    const targetConcept = conceptId ?? conceptIds[0];
+    const explainResult = await explainEngine.startExplanation(targetConcept);
+    modeManager.setCurrentConcept(targetConcept);
+
+    history.push({ role: 'agent', content: explainResult.explanation });
+
+    return {
+      agentResponse: explainResult.explanation,
+      trustUpdates,
+      candidateSignals,
+      mode: 'explain',
+      explainResult,
+    };
+  }
+
+  async function processExplainAdjustment(
+    direction: 'simpler' | 'deeper'
+  ): Promise<ConversationLoopResult> {
+    const explainResult = await explainEngine.adjustExplanation(direction);
+
+    history.push({ role: 'agent', content: explainResult.explanation });
+
+    return {
+      agentResponse: explainResult.explanation,
+      trustUpdates: [],
+      candidateSignals: [],
+      mode: 'explain',
+      explainResult,
+    };
+  }
+
+  async function processStartSandbox(
+    conceptId: string | null,
+    utterance: string,
+    now: number,
+    trustStates: Record<string, TrustState>
+  ): Promise<ConversationLoopResult> {
+    const { trustUpdates, candidateSignals } =
+      await extractAndWriteSignals(utterance, now, trustStates);
+
+    const targetConcept = conceptId ?? conceptIds[0];
+    sandboxEngine.startSandbox(targetConcept);
+    modeManager.setCurrentConcept(targetConcept);
+
+    const agentResponse = await generateAgentResponse(
+      llm,
+      history,
+      trustStates,
+      trustUpdates
+    );
+    history.push({ role: 'agent', content: agentResponse });
+
+    return {
+      agentResponse,
+      trustUpdates,
+      candidateSignals,
+      mode: 'sandbox',
+      sandboxStarted: { conceptId: targetConcept },
+    };
+  }
+
+  async function processNormalTurn(
+    utterance: string,
+    now: number,
+    trustStates: Record<string, TrustState>
+  ): Promise<ConversationLoopResult> {
+    const { trustUpdates, candidateSignals } =
+      await extractAndWriteSignals(utterance, now, trustStates);
+
+    await extractAndRecordClaims(utterance, now);
+
     const agentResponse = await generateAgentResponse(
       llm,
       history,
@@ -159,7 +348,7 @@ export function createConversationLoop(config: ConversationLoopConfig) {
 
     history.push({ role: 'agent', content: agentResponse });
 
-    return { agentResponse, trustUpdates, candidateSignals };
+    return { agentResponse, trustUpdates, candidateSignals, mode: modeManager.getCurrentMode() };
   }
 
   async function startGrillTurn(
@@ -175,6 +364,7 @@ export function createConversationLoop(config: ConversationLoopConfig) {
       trustUpdates: [],
       candidateSignals: [],
       grillStarted: pending,
+      mode: modeManager.getCurrentMode(),
     };
   }
 
@@ -184,10 +374,9 @@ export function createConversationLoop(config: ConversationLoopConfig) {
   ): Promise<ConversationLoopResult> {
     const grillResult = await grillEngine.processGrillResponse(utterance);
 
-    // Also extract implicit signals from the grill response.
     const signals = await extractImplicitSignals(llm, {
       utterance,
-      conversationHistory: history.map(t => `${t.role}: ${t.content}`),
+      conversationHistory: history.map((t) => `${t.role}: ${t.content}`),
       personId,
       currentTrustState: trustStates,
     });
@@ -221,7 +410,6 @@ export function createConversationLoop(config: ConversationLoopConfig) {
       });
     }
 
-    // Generate agent response reflecting the grill result.
     const agentResponse = await generateAgentResponse(
       llm,
       history,
@@ -237,7 +425,81 @@ export function createConversationLoop(config: ConversationLoopConfig) {
       trustUpdates: allTrustUpdates,
       candidateSignals,
       grillResult,
+      mode: modeManager.getCurrentMode(),
     };
+  }
+
+  async function runSandboxCode(code: string): Promise<SandboxCodeResult> {
+    if (!sandboxEngine.isSandboxActive()) {
+      throw new Error('No active sandbox');
+    }
+
+    const sandboxResult = await sandboxEngine.runCode(code);
+
+    const now = Date.now();
+    const trustStates = buildTrustStates(now);
+
+    const { write: writeSignals } =
+      applySignalWritePolicy(sandboxResult.signals, trustStates);
+
+    const trustUpdates: TrustUpdateResult[] = [];
+    for (const signal of writeSignals) {
+      if (deduplicator.isDuplicate(signal, now)) continue;
+
+      const modality = signalTypeToModality(signal.signalType);
+      const result = signalTypeToResult(signal.signalType);
+
+      const updated = recordVerification(store, {
+        personId,
+        conceptId: signal.conceptId,
+        modality,
+        result,
+        context: signal.evidence,
+        source: 'internal',
+        timestamp: now,
+      });
+
+      trustStates[signal.conceptId] = updated;
+      trustUpdates.push({
+        conceptId: signal.conceptId,
+        newLevel: updated.level,
+        reason: signal.evidence,
+      });
+    }
+
+    modeManager.recordSandboxResult(sandboxResult.execution.success);
+    for (const u of trustUpdates) {
+      modeManager.addTrustUpdate(u.conceptId, u.newLevel);
+    }
+
+    return {
+      execution: sandboxResult.execution,
+      annotation: sandboxResult.annotation,
+      suggestion: sandboxResult.suggestion,
+      trustUpdates,
+    };
+  }
+
+  function endSandbox(): void {
+    sandboxEngine.endSandbox();
+    modeManager.setMode('conversation');
+  }
+
+  function endExplanation(): void {
+    explainEngine.endExplanation();
+    modeManager.setMode('conversation');
+  }
+
+  function getCurrentMode(): Mode {
+    return modeManager.getCurrentMode();
+  }
+
+  function isSandboxActive(): boolean {
+    return sandboxEngine.isSandboxActive();
+  }
+
+  function getSandboxConceptId(): string | null {
+    return sandboxEngine.getSandboxState()?.conceptId ?? null;
   }
 
   async function startGrill(conceptId?: string): Promise<PendingGrill> {
@@ -254,7 +516,18 @@ export function createConversationLoop(config: ConversationLoopConfig) {
     return grillEngine.hasPendingGrill();
   }
 
-  return { processUtterance, getHistory, startGrill, hasPendingGrill };
+  return {
+    processUtterance,
+    getHistory,
+    startGrill,
+    hasPendingGrill,
+    runSandboxCode,
+    endSandbox,
+    endExplanation,
+    getCurrentMode,
+    isSandboxActive,
+    getSandboxConceptId,
+  };
 }
 
 async function generateAgentResponse(

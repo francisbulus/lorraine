@@ -76,4 +76,29 @@ describe('ConversationPanel', () => {
     expect(screen.getByText('What do you want to learn?')).toBeInTheDocument();
     expect(screen.queryByText('thinking...')).not.toBeInTheDocument();
   });
+
+  it('renders sandbox inline when sandboxActive is true', () => {
+    render(
+      <ConversationPanel
+        {...defaultProps}
+        messages={[{ id: 'msg1', role: 'agent', content: 'Try writing code.' }]}
+        sandboxActive={true}
+        sandboxConceptId="tcp-basics"
+        onSandboxRun={vi.fn()}
+        onSandboxClose={vi.fn()}
+      />
+    );
+    expect(screen.getByRole('region', { name: /sandbox: tcp-basics/i })).toBeInTheDocument();
+  });
+
+  it('does not render sandbox when sandboxActive is false', () => {
+    render(
+      <ConversationPanel
+        {...defaultProps}
+        messages={[{ id: 'msg1', role: 'agent', content: 'Try writing code.' }]}
+        sandboxActive={false}
+      />
+    );
+    expect(screen.queryByRole('region', { name: /sandbox/i })).not.toBeInTheDocument();
+  });
 });
