@@ -27,6 +27,7 @@
     "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^25.3.0",
     "better-sqlite3": "^12.6.2",
+    "jsdom": "^28.1.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }

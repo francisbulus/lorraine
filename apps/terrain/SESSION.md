@@ -2,7 +2,7 @@
 
 ## Current Task
 
-012 — Sandbox Mode (Phase 2)
+013 — Visual Map (Phase 2)
 
 ## Quick Status
 
@@ -29,7 +29,7 @@
 | 009 | Event Visibility & Challengeability | Done |
 | 010 | Session Management | Done |
 | 011 | Explain Mode (Phase 2) | Done |
-| 012 | Sandbox Mode (Phase 2) | Pending |
+| 012 | Sandbox Mode (Phase 2) | Done |
 | 013 | Visual Map (Phase 2) | Pending |
 | 014 | Self-Calibration View (Phase 2) | Pending |
 | 015 | Mode Transitions (Phase 2) | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-011 completed. Explain mode: depth ladder (intuition→abstraction→mechanism→implementation), auto-depth selection from trust state + prerequisites, depth adjustment via "simpler"/"deeper" patterns. 212 terrain tests, 79 engine tests, zero regressions.
+012 completed. Sandbox mode: sandboxed code execution (Function constructor with whitelisted globals, blocked patterns for process/require/eval/fetch/document), LLM-powered annotation + signal extraction, inline sandbox container with mode opening animation. 258 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 012 — Sandbox mode (Phase 2).
+Start 013 — Visual Map (Phase 2).
