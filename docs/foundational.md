@@ -1,8 +1,8 @@
 # Lorraine — Foundational Spec
 
-**Version:** 0.2 (Draft)
+**Version:** 0.4 (Draft)
 **Last Updated:** February 22, 2026
-**Governs:** This document defines the conceptual foundation. The main spec defines the implementation. Where they conflict, this document governs.
+**Governs:** This document defines the conceptual foundation. All other specs derive from it. Where they conflict, this document governs.
 
 ---
 
@@ -10,7 +10,9 @@
 
 Lorraine is a verifiable epistemic trust engine — it tracks what someone actually knows, with evidence, provenance, and honest decay, and makes that model transparent and challengeable.
 
-The first application built on Lorraine is a learning OS: a conversational agent that builds a map of what you know, collapses the cost of trying, and gets out of your way so you can discover — not be told — that you understand.
+The engine is application-agnostic. It serves any context where the gap between "claims to know" and "actually knows" has consequences: learning, hiring, onboarding, certification, organizational competency, AI evaluation.
+
+The first application built on Lorraine is a learning OS (see learning-os.md): a conversational agent that builds a map of what you know, collapses the cost of trying, and gets out of your way so you can discover — not be told — that you understand.
 
 ---
 
@@ -18,68 +20,94 @@ The first application built on Lorraine is a learning OS: a conversational agent
 
 The problem is not "how do people access learning content." The problem is:
 
-**How does anyone — the learner or any system helping them — actually know that learning happened?**
+**How does anyone — the person themselves, or any system working with them — actually know that understanding has been achieved?**
 
-This is the verification problem. It is unsolved by every major learning tool:
+This is the verification problem. It is unsolved everywhere:
 
 - Courses assume completion equals comprehension.
 - Flashcard apps assume recall equals understanding.
 - Coding exercises assume passing tests equals knowing why.
 - Documentation assumes reading equals learning.
+- Interviews assume performance under pressure equals competence.
+- Credentials assume passing once equals knowing permanently.
+- Onboarding assumes time spent equals readiness.
 
-Every one of these is a proxy. None establish ground truth. Without ground truth, everything built on top — adaptive difficulty, personalized pacing, knowledge tracking — is unreliable.
+Every one of these is a proxy. None establish best available evidence. Without evidence, everything built on top — adaptive difficulty, personalized pacing, knowledge tracking, hiring decisions, team competency assessments — is unreliable.
 
-Lorraine exists to solve the verification problem — first as a trust engine, then as the foundation for applications that need honest knowledge assessment. The learning OS is the first such application.
+Lorraine exists to solve the verification problem. The engine provides the trust primitives. Applications built on the engine use those primitives for their specific context.
 
 ---
 
 ## 2. Governing Principles
 
-These eleven principles govern every design decision. They emerged from first-principles reasoning about how humans actually learn, build self-trust, and experience genuine progress. They are not features. They are constraints the system must never violate.
+These principles govern Lorraine's design. They are organized into three tiers:
 
-### Principle 1: Trust is the foundational primitive.
+### Tier 1: Engine Invariants
 
-The entire system is built on trust — the learner's trust in their own understanding, the agent's trust in its model of the learner, and the mutual calibration between them. Without trust, nothing else works. Every feature, every interaction, every design choice must be evaluated against: "does this increase the accuracy and depth of trust?"
+These must hold in every application context. They are epistemic integrity constraints. Violating them means the trust model is dishonest.
 
-### Principle 2: Self-trust through independent arrival is the core experience.
+**Invariant 1: Trust is the foundational primitive.**
+The entire system is built on trust — tracked with evidence, provenance, and honest decay. Every feature, every interaction, every design choice must be evaluated against: "does this increase the accuracy and depth of trust?"
 
-The learner must feel that they arrived at understanding on their own. Not that they were led there. Not that it was made easy. The feeling of "I learned this" comes from reaching correctness independently, through your own reasoning, in a context different from the one you learned it in. If the system is too present in the moment of understanding, it poisons the self-trust.
+**Invariant 2: The system never inflates trust.**
+Verification never propagates as verification — only as inference. Inference attenuates with distance. Failure propagates more aggressively than success. The system should underestimate what someone knows rather than overestimate. This is a safety property, not a tunable parameter.
 
-### Principle 3: The agent is a mapmaker, not a guide.
+**Invariant 3: The system's reasoning is transparent and challengeable.**
+Every trust claim traces back to evidence. The person being modeled can always ask "why does the system believe this?" and get a traceable answer. The person can challenge the model — "test me on this" or "I know more than this says." Hiding the model from the person it describes is a violation.
 
-The agent's job is to make the terrain of knowledge visible — what's there, how it connects, where you are, where you're headed. It does not walk you through the terrain. It does not tell you which path to take. It shows you the map and lets you navigate. A map empowers without creating dependency.
+**Invariant 4: Failure is the most informative event.**
+When someone fails, the system ensures the failure is visible (what happened and why), the evidence is recorded (it becomes part of the trust model), and the cost is appropriate to the context. Failure reveals the exact boundary of understanding. The system never hides or minimizes failure data.
 
-### Principle 4: Learning is terrain ownership, not path completion.
+**Invariant 5: The system never manipulates verification to inflate trust.**
+No leading questions chosen to boost scores. No artificially easy prompts. No selective verification that avoids weak areas. If a verification event occurs, it is recorded honestly regardless of the result. The engine guarantees that trust scores reflect genuine evidence, not optimistic assessment. Difficulty preservation in the actual experience (prompt design, modality constraints, terrain presentation) is a services and application responsibility — but the engine ensures that whatever verification occurs is recorded and propagated honestly.
 
-Knowing a subject is not having walked one path through it. It is being able to navigate the terrain from any starting point and arrive at correctness. A learner who has completed a course has walked a path. A learner who owns the terrain can enter from any direction and still find their way. The system must help learners own terrain, not complete paths.
+**Invariant 6: Trust state is a derived view, not a primary store.**
+Trust state is always recomputable from verification events + claim events + decay function + propagation rules. There are no direct edits to trust state. The event log is the source of truth. Trust state is a materialized view over that log. This keeps the model auditable.
 
-### Principle 5: The gate is a threshold between territories, not a test.
+Corrections are event-sourced, not state edits. If an event needs to be corrected (fraudulent event, duplication, identity mixup, consent/erasure request), it is retracted via `retractEvent(eventId, reason)` — which is itself a logged event. The original event is marked as retracted, the reason is recorded, and trust state is recomputed without it. Nothing is ever deleted from the log. The audit trail is always complete.
 
-When the learner reaches the boundary between one area of knowledge and the next, they face a choice: move into new terrain, or turn back and explore more deeply. This threshold is not a test to pass. It is a decision to make. The decision is safe because the learner can always return to known ground.
+### Tier 2: Human Experience Defaults
 
-### Principle 6: The agent prompts self-reflection, not judgment.
+These are strongly recommended for any application involving humans. They represent best practices for how people should experience being modeled. Applications may adapt them to their context, but departing from them should be a conscious, justified decision.
 
-The agent never says "you're ready" or "you're not ready." It surfaces the threshold, makes the criteria for readiness visible, and asks: "do you feel like you own this ground?" The act of asking yourself that question is itself a learning moment. The learner decides. The agent informs the decision but does not make it.
+**Default 7: Self-trust through independent arrival.**
+The person should feel that they arrived at understanding on their own. Not that they were led there. Not that it was made easy. If the system is too present in the moment of understanding, it dilutes the self-trust. Applications may override this in contexts where guided verification is appropriate (e.g., structured certification), but should understand what they're trading away.
 
-### Principle 7: The system collapses the cost of action until self-trust emerges naturally.
+**Default 8: The system prompts self-reflection, not judgment.**
+The system surfaces data and asks: "what do you think?" rather than declaring "you're ready" or "you're not ready." The person's self-assessment is itself valuable data (see: claim events). Applications with external authority (hiring, certification) may add judgment on top, but the self-reflection layer should still exist where possible.
 
-Self-trust requires action, but action requires self-trust. The system breaks this paradox by making the cost of trying as low as possible. Failure is cheap. You can always return to solid ground. The map persists. Nothing is lost by attempting. When trying costs almost nothing, even a learner without self-trust will try. And through accumulated experience of useful action — even failed action — self-trust emerges as a byproduct.
+**Default 9: The system collapses the cost of action.**
+Self-trust requires action, but action requires self-trust. The system breaks this paradox by making the cost of trying as low as possible. Failure is cheap. You can always return to solid ground. When trying costs almost nothing, people try. Applications with high-stakes consequences (certification exams, hiring decisions) cannot always collapse cost, but should minimize unnecessary friction.
 
-### Principle 8: The system is approach-agnostic.
+**Default 10: The system is approach-agnostic.**
+Different people approach terrain differently. The system does not privilege one approach over another. Each approach should feel like progress. Applications may constrain approaches for practical reasons (a hiring process may require specific modalities), but the engine itself makes no assumptions about how understanding should be reached.
 
-Different learners approach terrain differently. Some seek the high ground first and descend into details. Some start in the valley with concrete specifics and work upward. Some mix approaches fluidly. The system does not privilege one approach over another. It does not become opinionated in the learner's face. Each approach should feel like there is progress. The system's only opinion is that understanding must happen — how the learner gets there is their own.
+**Default 11: Foundational capability over topical coverage.**
+Deep understanding of core principles transfers to novel problems. The system prioritizes depth on foundations over breadth across topics. Growth is not knowing more things — it's trusting your ability to engage with hard new things.
 
-### Principle 9: Difficulty is sacred.
+### Tier 3: Learning OS Policy
 
-Learning is not supposed to be easy. The system never artificially flattens the terrain to make it comfortable. Difficulty is what makes self-trust possible — without resistance, there is no relief of independent arrival. Without struggle, the learner can never be sure whether they understood it or whether it was just made easy enough that anyone would have gotten it. The system preserves natural difficulty, never creates artificial difficulty, and never frames difficulty as a problem to be solved.
+These are specific to the learning OS application. They are strict within that context but do not apply to other applications.
 
-### Principle 10: The system builds foundational capability, not topical coverage.
+**Policy A: The agent is a mapmaker, not a guide.**
+The agent makes terrain visible. It does not prescribe paths. It shows the map and lets the learner navigate. A map empowers without creating dependency.
 
-Deep understanding of core principles transfers to novel problems. A learner who deeply understands TCP's approach to reliability can engage with any reliability problem, even one they've never seen. The system prioritizes depth on foundational principles over breadth across topics. New difficulty is not a failure of preparation — it is the next challenge, and the learner's foundation is what lets them engage with it. Growth is not knowing more things. Growth is trusting your ability to engage with hard new things.
+**Policy B: Learning is terrain ownership, not path completion.**
+Knowing a subject is being able to navigate from any starting point and arrive at correctness. The system helps learners own terrain, not complete paths.
 
-### Principle 11: Failure is cheap, visible, and navigable.
+**Policy C: The gate is a threshold, not a test.**
+Boundaries between knowledge areas are decisions to make, not tests to pass. The learner always decides whether to move forward. The decision is safe because they can always return.
 
-When the learner fails — and they will, because difficulty is preserved — the system ensures three things: the cost is low (you can try again immediately), the failure is visible (you can see what happened and why), and the path back is clear (the map shows you where you are relative to solid ground). Failure is the most informative event in the system. It reveals the exact boundary of understanding.
+**Policy D: No gamification.**
+No streaks. No points. No badges. No leaderboards. The map is the progress indicator. Trust state is the score. Verified terrain is the reward.
+
+**Policy E: No praise.**
+The agent reflects what the person did — "you just described acknowledgment-based reliability from first principles" — without evaluating it. The person feels the accomplishment. The agent doesn't label it.
+
+**Policy F: No urgency.**
+The agent never says "you're falling behind." If trust has decayed, the agent mentions it neutrally and lets the person decide what to do.
+
+See learning-os.md for full specification of these policies in practice.
 
 ---
 
@@ -89,39 +117,59 @@ When the learner fails — and they will, because difficulty is preserved — th
 
 Trust is not a confidence score. It is a richer object that answers:
 
-- **What was verified?** The specific concept or relationship.
-- **How was it verified?** Through what modality — answering a question, writing code, drawing a diagram, explaining in prose, using it naturally in conversation.
+- **What was verified?** The specific concept.
+- **How was it verified?** Through what modality — answering a question, writing code, drawing a diagram, explaining in prose, using it naturally in reasoning, performing a real-world action observed by an external system.
 - **When was it verified?** Recency matters. Knowledge decays.
-- **From how many angles?** Single-modality verification is weaker than cross-modality verification. The learner who can answer a question AND write the code AND explain it in their own words owns the terrain more than one who can only do one of those.
+- **From how many angles?** Single-modality verification is weaker than cross-modality verification. Someone who can answer a question AND write the code AND explain it in their own words has stronger trust than someone who can only do one of those.
 - **What was inferred vs. demonstrated?** The system may believe you know X because you demonstrated Y. That inference is useful but it is not the same as demonstration. The system must always know the difference.
+- **What was claimed vs. evidenced?** A person saying "I know TCP" is a signal, but it is not evidence. Claims and evidence are tracked separately because the gap between them is itself diagnostic.
 
 ### 3.2 Trust Levels
 
-Each concept the learner has encountered exists in one of four trust states:
+Each concept exists in one of four trust states per person:
 
-**Verified** — The learner has directly demonstrated understanding, ideally through multiple modalities. This is the strongest state. It still decays with time.
+**Verified** — The person has directly demonstrated understanding, ideally through multiple modalities. This is the strongest state. It still decays with time.
 
-**Inferred** — The system believes the learner probably understands this based on demonstrated understanding of related concepts. Useful for efficiency, but the system must never treat inference as fact.
+**Inferred** — The system believes the person probably understands this based on demonstrated understanding of related concepts. Useful for efficiency, but the system must never treat inference as fact.
 
-**Untested** — The system has no data. The learner may or may not understand this. Intellectual honesty requires distinguishing "untested" from "doesn't know."
+**Untested** — The system has no evidence. The person may or may not understand this. Intellectual honesty requires distinguishing "untested" from "doesn't know."
 
-**Contested** — The learner has demonstrated understanding in one context but failed in another. This is the most informationally rich state. It reveals the exact boundary of understanding — where the learner's model works and where it breaks. Contested concepts are the highest-priority targets for the system's attention.
+**Contested** — The person has demonstrated understanding in one context but failed in another. This is the most informationally rich state. It reveals the exact boundary of understanding — where the person's model works and where it breaks. Contested concepts are the highest-priority targets for further verification.
 
-### 3.3 The Trust Graph
+### 3.3 What the Engine Stores
 
-Knowledge is not a list. It is a graph of concepts connected by relationships — prerequisites, components, analogies, related ideas. The trust graph has three layers:
+The engine's data model is five things:
 
-**The Knowledge Layer** — The structure of the domain itself. Concepts and their relationships. This exists independently of any learner.
+**Concepts** — nodes in a graph. Each concept is something a person could know or not know. Concepts have a canonical id, a name, and a description. The engine doesn't know what domain they belong to — it just stores nodes.
 
-**The Verification Layer** — The history of how trust was built. Every grill question, sandbox experiment, written explanation, sketch, and conversational moment that produced a trust signal. This is the audit trail. Every trust claim has a provenance you can trace backward through this layer.
+**Edges** — connections between concepts. Each edge has a type (prerequisite, component_of, related_to) and an inference strength (how strongly does trust in one imply trust in the other). Edges are what make the graph a graph and what enable trust propagation.
 
-**The Trust Layer** — The learner's personal state overlaid on the domain structure. Each concept carries its trust level, and edges between concepts carry inference strength — how strongly does verified trust in A imply likely trust in B?
+**Verification events** — the atomic evidence. Each event records what was tested, how (modality), when, the result (demonstrated/failed/partial), and the full context (what question was asked, what code was written, what response was given). This is the provenance layer. Every trust claim traces back to verification events.
 
-The same concept exists in all three layers simultaneously. The power comes from cross-layer queries: "Does this person understand TCP handshakes?" requires checking the domain structure (what does understanding require?), the verification history (what evidence exists?), and the trust state (what's the current level, and is it demonstrated or inferred?).
+**Claim events** — a person's self-reported belief about their own understanding. Each claim records the concept, the person, their self-reported confidence, and the context. Claims are not evidence. They are tracked separately because:
+- The gap between claims and verified trust measures self-calibration
+- Systematic overclaiming on untested concepts signals overconfidence
+- Systematic underclaiming on verified concepts signals imposter syndrome
+- Growth in calibration (claims converging with evidence over time) is itself a meaningful signal
+- In hiring/certification, the candidate's claims are the starting point that verification tests against
 
-### 3.4 Trust Propagation Rules
+**Trust state** — a derived view, not a primary store. Trust state is computed from verification events + claim events + decay function + propagation rules. It can always be recomputed from the event log. There are no manual overrides. This keeps the model auditable — if the trust state says "verified," you can trace back through events to see exactly why. Trust state includes: level (verified/inferred/untested/contested), confidence, verification history, modalities tested, time since last verification, what inferences led to the current state, and the gap between self-reported claims and evidence.
 
-Trust propagation must be conservative. The system should underestimate what the learner knows rather than overestimate.
+### 3.4 The Three-Layer Mental Model
+
+It's useful to think about the data in three layers, even though the engine stores them as primitives:
+
+**Structure** — concepts and edges. The shape of knowledge in a domain. What exists, how it connects. Independent of any person.
+
+**Evidence** — verification events and claim events. The history of what was observed and what was claimed. Every trust assessment traces backward through this layer.
+
+**State** — trust per concept per person. The current picture. Derived from evidence, decayed by time, propagated across edges. A materialized view, not a source of truth.
+
+The power comes from cross-layer queries: "Does this person understand TCP handshakes?" requires checking the structure (what does understanding require?), the evidence (what has been observed, and what has the person claimed?), and the state (what's the current derived trust level?).
+
+### 3.5 Trust Propagation Rules
+
+Trust propagation must be conservative. The system should underestimate what someone knows rather than overestimate.
 
 1. **Verification never propagates as verification.** Demonstrating A may create inference about B, but never verified trust in B. Only direct demonstration produces verification.
 
@@ -129,9 +177,11 @@ Trust propagation must be conservative. The system should underestimate what the
 
 3. **Failure propagates aggressively.** If you fail to demonstrate B, and B is a foundation for C, D, and E — then trust in C, D, and E drops, even if they were previously inferred. Failure at a foundation shakes everything above it.
 
-4. **Cross-modality verification compounds.** Demonstrating understanding through grill AND sandbox is stronger than either alone. The system tracks which modalities have been used and seeks verification through unused modalities for important concepts.
+4. **Cross-modality verification compounds.** Demonstrating understanding through multiple modalities is stronger than any single modality alone. The system tracks which modalities have been used and seeks verification through unused modalities for important concepts.
 
 5. **Time decays trust.** A concept verified six months ago is not as trustworthy as one verified yesterday. Decay rate varies by concept type and by the depth of original verification.
+
+These rules are hardcoded in the engine core. They are epistemic integrity constraints (Invariant 2). If they were configurable, a bad configuration could inflate trust scores across the graph.
 
 ---
 
@@ -139,13 +189,13 @@ Trust propagation must be conservative. The system should underestimate what the
 
 ### 4.1 Two-Way Verification
 
-Most learning systems verify in one direction: the system tests the learner. Lorraine verifies in both directions:
+Most systems verify in one direction: the system tests the person. Lorraine verifies in both directions:
 
-**The system verifies the learner** — through grill questions, sandbox experiments, writing prompts, sketch analysis, and conversational probes.
+**The system verifies the person** — through questions, experiments, prompts, and observation of real-world actions.
 
-**The learner verifies themselves via the system** — the learner can challenge the system's model at any time. "Test me on this." "I don't think I really know this despite what your model says." "I've learned this outside the system — let me prove it."
+**The person verifies themselves via the system** — the person can challenge the system's model at any time. "Test me on this." "I don't think I really know this despite what your model says." "I've demonstrated this outside the system — let me prove it."
 
-Two-way verification keeps the model calibrated from both sides. The learner often has private information the system doesn't — a gut feeling that their understanding is shaky, or knowledge gained outside the system.
+Two-way verification keeps the model calibrated from both sides. The person often has private information the system doesn't — a gut feeling that their understanding is shaky, or knowledge gained outside the system.
 
 ### 4.2 Verification Modalities
 
@@ -162,126 +212,164 @@ Different modalities verify different kinds of understanding, at different trust
 | Written explanation | Can linearize and articulate | Strong |
 | Teaching explanation | Can explain to a different audience | Very Strong |
 | Diagram/sketch | Can represent structure visually | Medium-Strong |
-| Unprompted conversational use | Uses concept naturally without being asked | Strongest |
+| Integrated use | Uses concept naturally in reasoning without scaffolding | Strongest |
+| External observation | Demonstrated through real-world action observed by outside system | Varies by context |
 
-The system should seek verification through higher-trust modalities for important concepts. A concept verified only through recall is not well-trusted even if the score is high.
+The system should seek verification through higher-trust modalities for important concepts. A concept verified only through recall is not well-trusted even if the confidence is high.
+
+Not all modalities are available in all application contexts. A learning OS has access to conversation, code, sketching. A hiring process may constrain to specific modalities. An onboarding system may receive external observation events from CI/CD pipelines. The engine handles all modalities the same way — it records the event and updates the derived trust state.
 
 ### 4.3 The Contested State
 
-When a concept is contested — demonstrated in one context but failed in another — the system does not rush to fix it. Instead it investigates:
+When a concept is contested — demonstrated in one context but failed in another — the system does not rush to resolve it. Instead it investigates:
 
 - Was the failure a genuine gap, or a framing issue?
 - Is the success genuine, or was it pattern-matched without understanding?
 - What is the exact boundary — where does understanding work and where does it break?
 
-Contested concepts reveal the frontier between understanding and not-understanding, which is where the most productive learning happens.
+Contested concepts reveal the frontier between understanding and not-understanding. This is the most productive area for the system's attention in any application context — whether that's a learner working through confusion, a candidate revealing the limits of their knowledge, or an employee whose understanding is uneven.
+
+### 4.4 Claims vs. Evidence
+
+When a person says "I know this," that is a claim event, not a verification event. The engine records both but never conflates them.
+
+The gap between claims and evidence is diagnostic:
+
+- **Overclaiming** — person claims high confidence, evidence shows gaps. In a learning context, this is a calibration opportunity. In hiring, this is critical signal.
+- **Underclaiming** — person claims low confidence, evidence shows verified understanding. This is imposter syndrome signal. The system can surface the evidence: "you've demonstrated this from three angles — the data says you own this ground."
+- **Calibration growth** — over time, do claims converge with evidence? Growing self-calibration is itself a form of epistemic development. This connects directly to Lorraine Code's thesis: knowing well includes knowing what you don't know.
+- **Claim as planning input** — a person's claims about what they know (or don't) help the system prioritize what to verify next. Claims are the starting hypothesis that verification tests.
 
 ---
 
-## 5. The Agent's Role
+## 5. Architecture: Engine Core and Engine Services
 
-### 5.1 The Mapmaker
+The engine is split into two layers:
 
-The agent builds and maintains the map. It shows the learner: here is the terrain of this domain. Here is where you are. Here is where you said you want to go. Here are the thresholds between territories. Here is what your trust model looks like — what's verified, what's inferred, what's untested, what's contested.
+### 5.1 Engine Core
 
-The agent does not walk the learner through the terrain. It does not prescribe a path. It illuminates the landscape and lets the learner navigate.
+Pure trust machine. Deterministic. No LLM dependency. Can run fully encrypted client-side.
 
-### 5.2 The Threshold Prompter
+The core:
+- Accepts verification events and claim events
+- Stores concepts and edges
+- Computes and serves derived trust state
+- Runs propagation across the graph
+- Runs time-based decay
+- Self-calibrates (compares predictions to outcomes)
+- Explains its reasoning (provenance for any trust claim)
 
-When the learner reaches a threshold between territories, the agent surfaces it. It provides:
+The core's API: recordVerification, recordClaim, getTrustState, getBulkTrustState, propagateTrust, decayTrust, calibrate, explainDecision, loadConcepts, getGraph.
 
-1. **Awareness** — "There's a threshold here between A and B."
-2. **Criteria** — "Owning territory A means being able to approach it from multiple angles and arrive at correctness."
-3. **The question** — "Do you feel like you own it?"
-4. **Tools for the unsure** — "Want to test yourself before deciding?"
+The core never generates natural language. It never interprets natural language. It operates on structured data only.
 
-The agent never makes the readiness judgment. The learner makes the call.
+### 5.2 Engine Services
 
-### 5.3 Low-Pressure Support
+LLM-powered adapters that sit between the core and applications. These generate and interpret the unstructured human-facing interactions that produce verification events.
 
-When the learner has demonstrated understanding but doesn't trust themselves, the agent does not push. It does not say "the data shows you're ready." Instead it makes the evidence visible without making the conclusion:
+The services:
+- **generateVerification** — uses trust state from the core + LLM to produce a verification prompt (question, code challenge, writing prompt, etc.)
+- **interpretResponse** — uses LLM to translate a person's natural language response into structured trust updates that get written to the core
+- **extractImplicitSignals** — uses LLM to mine natural interaction for trust signals
 
-"You've navigated this from three different directions and arrived at correctness each time. That's yours. But it's your call. Either way, you can always come back."
+Services vary by application. A learning OS service generates conversational Socratic questions. A hiring service might generate technical interview prompts. A certification service might generate standardized assessments. They all write to the same core.
 
-The key phrase: **you can always come back.** This is the safety net that makes self-trust possible. Moving forward is not irreversible. The map persists. The territory is always there.
+Services are where plaintext meets the LLM. This separation means:
+- The core can be encrypted end-to-end
+- The core can run without any LLM (useful for external event ingestion)
+- Services can be swapped, updated, or specialized per application without touching the core
+- Compliance requirements that vary by context (healthcare, finance) are handled in the services layer
 
-### 5.4 The Agent's Epistemics
+### 5.3 Applications
 
-The agent maintains epistemic honesty at all times:
+Applications sit on top of core + services. They:
+- Load domain packages into the core (concepts and edges)
+- Read trust state from the core
+- Group concepts into meaningful clusters (territories, skill areas, milestones)
+- Define readiness criteria (thresholds, requirements, gates)
+- Manage interaction (conversation, dashboard, assessment flow)
+- Present the trust model to people in context-appropriate ways
 
-- Never claims the learner knows something that's only inferred.
-- Never hides its own uncertainty.
-- Never optimizes for the learner's feelings over accuracy.
-- Distinguishes its suggestions from certainty.
-- Tracks its own calibration — when it predicts the learner will succeed, does that actually happen at the predicted rate?
-
-When the agent's self-trust is low (too many surprises, poor calibration, stale data), it proactively seeks re-verification: "I haven't tested your understanding of X in a while, and a lot of what I think you know depends on it. Want to do a quick check?"
-
-### 5.5 Conversation as Primary Interface
-
-The primary interface is conversation. The learner talks to the agent. Through conversation:
-
-- The agent builds and updates the trust model.
-- The learner expresses goals, asks questions, demonstrates understanding, admits confusion.
-- The agent explains, questions, suggests, surfaces thresholds.
-
-The six modalities (explain, sandbox, sketch, grill, write, provision) are not separate applications. They are things the conversation becomes when plain language isn't sufficient:
-
-- "Let me break this down" → explain
-- "Want to try it?" → sandbox
-- "Can you draw what you mean?" → sketch
-- "Let me check something" → grill
-- "Explain this back to me in your words" → write
-- "Here's a real environment to work in" → provision
-
-These transitions should feel like natural extensions of the conversation, not context switches.
-
-### 5.6 Implicit Verification
-
-The richest trust signals come from natural conversation, not explicit testing:
-
-- The learner uses a concept correctly in passing → strong implicit verification.
-- The learner asks a question that reveals a missing prerequisite → implicit gap signal.
-- The learner self-corrects mid-sentence → active model-building in progress.
-- The learner's questions become more sophisticated → implicit signal of deepening understanding.
-
-The agent extracts trust signals continuously, not only during designated verification moments. Every interaction is both a learning moment and a verification moment.
+See learning-os.md for the first application. See domain-schema.md for the content model.
 
 ---
 
-## 6. The Sekiro Principle
+## 6. Application-Level Principles
 
-This section addresses the relationship between difficulty, growth, and foundational capability.
+The engine provides concepts, edges, trust state, verification events, and claim events. Applications add meaning. This section describes principles that apply across applications, even though their implementation varies.
 
-### 6.1 The Analogy
+### 6.1 Making the Terrain Visible
+
+The engine stores the graph and derived trust state. Applications make it visible. How depends on context:
+
+- A learning OS shows a map with fog of war, verified territory, and thresholds
+- A hiring dashboard shows trust state against required competencies
+- An onboarding tracker shows progress against milestones with the manager's view alongside the employee's
+- A team competency view shows aggregate trust across an organization
+
+The invariant (Invariant 3): the person whose understanding is being modeled should be able to see what the system believes about them, why, and challenge it. Applications that hide the trust model from the person violate the engine's integrity constraints.
+
+### 6.2 Thresholds and Readiness
+
+Applications group concepts into meaningful clusters and define boundaries between them. When someone reaches a boundary, the application surfaces it. The engine provides the data: trust state across the relevant concepts. The application provides the experience.
+
+In a learning OS, thresholds are invitations — "do you feel like you own this ground?" The person always decides.
+
+In a hiring process, thresholds may be requirements — "the organization requires verified trust on these concepts."
+
+In onboarding, thresholds may be milestones — "by day 30, these concepts should be verified."
+
+The engine doesn't know about any of this. It provides derived trust state per concept per person. The application interprets that state against its own requirements.
+
+### 6.3 Implicit Verification
+
+The richest trust signals come from natural interaction, not explicit testing:
+
+- Someone uses a concept correctly in passing → strong implicit verification.
+- Someone asks a question that reveals a missing prerequisite → implicit gap signal.
+- Someone self-corrects mid-sentence → active model-building in progress.
+- Someone's reasoning becomes more sophisticated → implicit signal of deepening understanding.
+- Someone handles a real-world situation that demonstrates understanding → external verification.
+
+The engine services layer provides `extractImplicitSignals`. Applications that support conversation or real-time interaction should mine every interaction for signal, not wait for explicit testing moments. Applications that receive external events (CI/CD, HR systems) are also providing implicit verification — the person didn't take a test, they did their job, and the system observed it.
+
+---
+
+## 7. The Sekiro Principle
+
+This section addresses the relationship between difficulty, growth, and foundational capability. It applies across all applications, not just learning.
+
+### 7.1 The Analogy
 
 In Sekiro, the player doesn't level up to overpower enemies. The enemies scale with the player. What changes is the player — their timing, pattern recognition, and composure under pressure. The game doesn't get easier. The player gets more capable. And the proof of capability isn't a stat screen — it's the felt experience of deflecting an attack that would have destroyed you ten hours ago.
 
 Critically: Sekiro doesn't prevent you from walking into a fight you're not ready for. You enter, you get destroyed, and you learn from the destruction. The cost is low — you respawn and try again. The game trusts you to calibrate yourself through experience.
 
-### 6.2 Foundational Capability
+### 7.2 Foundational Capability
 
-Every domain has foundational principles that carry across all its territories. In networking, it's the idea of reliable communication over unreliable channels. In databases, it's the tension between consistency and performance. In security, it's the attacker-defender asymmetry.
+Every domain has foundational principles that carry across its concepts. In networking, it's the idea of reliable communication over unreliable channels. In databases, it's the tension between consistency and performance. In security, it's the attacker-defender asymmetry. In management, it's the tradeoff between autonomy and alignment.
 
 These foundational principles are like Sekiro's deflect mechanic. Early concepts teach you the rhythm. Later concepts use the same rhythm with more complex patterns. You're never starting from zero in new territory — you have the foundation. The new terrain is novel, but the way you engage with it is the same way you've been engaging all along, just at a higher level.
 
-### 6.3 What Growth Looks Like
+This is why Lorraine prioritizes depth on foundational concepts over breadth across topics (Default 11). A person who deeply understands acknowledgment-based reliability in TCP can engage with write-ahead logging in databases — not because they're the same concept, but because the underlying principle transfers.
 
-Growth is not knowing more things. Growth is the accumulation of trust in your own ability to engage with hard new things. Each territory you own reinforces the foundational principles. Each threshold you cross — even the ones where you struggled — adds to the evidence that you can handle difficulty.
+### 7.3 What Growth Looks Like
 
-Over time, the learner doesn't become all-knowing. They become someone who trusts their ability to navigate unfamiliar terrain because they've done it before. The next challenge is scarier, but they've faced scary things and come through. That proof lives in them.
+Growth is not knowing more things. Growth is the accumulation of trust in your own ability to engage with hard new things. Each concept you verify reinforces foundational principles. Each challenge you face — even the ones where you struggle — adds to the evidence that you can handle difficulty.
 
-### 6.4 New Difficulty is Not Failure
+Over time, a person doesn't become all-knowing. They become someone who trusts their ability to navigate unfamiliar terrain because they've done it before. The next challenge is harder, but they've faced hard things and come through. That proof lives in them — and in the trust model.
 
-When a learner moves into new territory and struggles, this is not a failure of the system. It is the system working correctly. New difficulty is the next boss. If the foundational principles were genuinely learned (not memorized, not hand-held through), then the learner has what they need to engage. They might need to retreat. They might need to explore previous terrain more deeply. But they have the foundation. The map persists. They can always come back.
+### 7.4 New Difficulty is Not Failure
+
+When someone moves into new territory and struggles, this is not a failure of the system. It is the system working correctly. New difficulty is the next boss. If the foundational principles were genuinely understood (not memorized, not hand-held through), then the person has what they need to engage. They might need to retreat. They might need to explore previous concepts more deeply. But they have the foundation. The evidence shows it. They can always go back.
 
 ---
 
-## 7. What a Session Feels Like
+## 8. What a Session Feels Like
 
-This section tests whether the principles translate into a coherent product experience. It is a narrative, not a wireframe.
+This section tests whether the principles translate into a coherent experience. These narratives demonstrate the learning OS — the first application built on the engine. Other applications would produce different sessions but follow the same engine invariants.
 
-### 7.1 First Session — A New Learner
+### 8.1 First Session — A New Learner
 
 Ade wants to learn how computer networking works. Not for an exam. He's a backend developer who's been treating the network as a black box and wants to understand what's underneath.
 
@@ -337,7 +425,7 @@ Ade looks at the map. TCP reliability is solid. DNS and HTTP are faintly marked 
 
 He doesn't feel ready because the system told him he's ready. He feels ready because he just proved to himself that he can derive the principles independently. The self-trust is his.
 
-### 7.2 Returning Session — Three Days Later
+### 8.2 Returning Session — Three Days Later
 
 Ade comes back. The agent doesn't start with "welcome back!" or a streak counter. It starts with the map.
 
@@ -361,9 +449,9 @@ The conversation becomes a sandbox where Ade can see both mechanisms operating o
 
 The contested state in the trust model — Ade had a confused understanding of flow control — resolves. Not because the agent explained it, but because Ade saw the difference himself and articulated it.
 
-### 7.3 The Difficult Session — Two Weeks In
+### 8.3 The Difficult Session — Two Weeks In
 
-Ade has been learning for two weeks. He owns significant territory: TCP reliability, flow control, basic congestion control, DNS resolution, HTTP request/response cycles. His map is filling in. Green nodes spreading outward.
+Ade has been learning for two weeks. He owns significant territory: TCP reliability, flow control, basic congestion control, DNS resolution, HTTP request/response cycles. His map is filling in. Verified nodes spreading outward.
 
 He decides to explore TLS and encryption. This is new terrain and it's hard. The math is harder. The concepts are more abstract. He's used to seeing things in packet captures and code. Cryptographic primitives don't visualize as easily.
 
@@ -383,80 +471,60 @@ Ade will come back. Not because of a streak counter. Because he felt the foundat
 
 ---
 
-## 8. Primitives Summary
+## 9. Engine Primitives
 
-These are the irreducible building blocks. Everything else composes from these.
+These are the irreducible building blocks of the engine core. Everything composes from these.
 
 | Primitive | What it is | Why it's irreducible |
 |-----------|-----------|---------------------|
-| **Trust object** | A record of verified or inferred understanding, including modality, recency, and strength | Without this, the system has no ground truth |
-| **Concept node** | A single unit of knowledge the learner could demonstrate or fail to demonstrate | Without granularity, verification is too coarse |
-| **Relationship edge** | A typed, weighted connection between concepts | Without relationships, trust stays isolated |
-| **Verification event** | A single interaction where understanding was observed | Without events, trust has no evidence |
-| **Decay function** | Time-based degradation of trust | Without decay, the model goes stale |
-| **Learner goal** | A declared destination on the map | Without goals, the agent can't show relevant terrain |
-| **Conversation turn** | A single exchange between learner and agent | The atomic unit from which everything emerges |
-| **Threshold** | A boundary between territories that the learner decides to cross or not | Without thresholds, there's no structure to progress |
-| **The map** | The visible, navigable representation of domain structure and learner state | Without the map, the learner has no orientation |
+| **Concept** | A node in the graph — something a person could know or not know | Without concepts, there's nothing to track trust against |
+| **Edge** | A typed, weighted connection between concepts | Without edges, trust stays isolated and can't propagate |
+| **Verification event** | A single observation of understanding — what, how, when, result, context | Without events, trust has no evidence |
+| **Claim event** | A person's self-reported belief about their own understanding | Without claims, the gap between self-perception and evidence is invisible |
+| **Trust state** | Per concept, per person — derived from events + decay + propagation | Without trust state, there's no queryable model (note: derived, not stored) |
+| **Retraction event** | A logged correction to a previous event — marks it retracted with reason | Without retractions, the system has no error correction that preserves audit integrity |
 
----
+Everything else is built by applications on top of these five primitives:
 
-## 9. What This Means for the Main Spec
+| Application concept | Built from | Example |
+|-------------------|-----------|---------|
+| Territory / skill area / milestone | A named group of concepts | Learning OS groups concepts into "TCP Reliability" |
+| Map / dashboard / tracker | Graph + trust state, rendered | Learning OS shows fog-of-war map |
+| Threshold / readiness gate / requirement | Trust state compared against criteria | Hiring app requires verified trust on specific concepts |
+| Goal / destination / target | A concept or group of concepts the person wants to reach | Learning OS lets the learner declare a goal |
+| Path / curriculum / onboarding plan | A suggested route through the graph | Onboarding app sequences concepts by milestone |
+| Session / interview / assessment | A bounded interaction that produces verification and claim events | All applications |
+| Self-calibration score | Gap between claim events and verification events over time | Measures growth in epistemic self-awareness |
 
-The main spec should be re-evaluated through this foundation:
-
-**Architecture changes:**
-- The Trust Engine is the central component, not the Mode Orchestrator.
-- The Mode Orchestrator is downstream — it decides which modality to surface based on what the Trust Engine needs.
-- The conversation is the primary interface. Modes emerge from conversation.
-
-**Mode reframing:**
-- Each mode is a verification surface and a terrain exploration tool. Not a "learning mode."
-- The agent transitions between modes because the trust model needs a different kind of signal or the learner's exploration calls for a different medium. Not because of behavioral heuristics.
-
-**UX changes:**
-- The map is always accessible. It is the learner's primary orientation tool.
-- No gamification. No streaks. No artificial progress metrics. The map IS the progress indicator — territory owned is visible as verified trust. Territory explored but unverified is visible as inferred. Unknown territory is visible as fog.
-- The onboarding is a conversation, not a tutorial.
-- Thresholds are surfaced by the agent but decided by the learner.
-
-**What stays:**
-- The six modalities are the right set of verification surfaces.
-- Cross-modality verification compounds trust (Principle 4 of trust propagation).
-- Spaced repetition exists but is framed as "the terrain behind you may have shifted — want to check?" not as mandatory review.
-- Security requirements are unchanged and potentially strengthened.
-
-**Newly required:**
-- A trust dashboard the learner can inspect and challenge.
-- Agent self-calibration tracking.
-- The contested state as a first-class visible concept.
-- Threshold moments explicitly designed into the UX.
-- The map as a primary navigation and progress element.
+The engine provides the primitives. Applications provide the meaning.
 
 ---
 
 ## 10. Open Questions
 
 ### 10.1 Map Visualization
-How do you make a concept graph legible and useful to a non-technical learner? Graphs are notoriously hard to visualize. The map metaphor is powerful but the implementation is an unsolved design problem. Terrain/topographic metaphors may work better than node-and-edge graphs.
+How do you make a concept graph legible and useful to a non-technical person? Graphs are notoriously hard to visualize. The terrain/topographic metaphor may work better than node-and-edge graphs. This is an application-level design problem but has implications for how the engine exposes graph data.
 
 ### 10.2 Concept Granularity
-Who decides that "TCP handshake" is one node versus three ("SYN," "SYN-ACK," "ACK")? Granularity determines how useful the trust model is. Too coarse and you can't diagnose gaps. Too fine and it's noise. The system may need to dynamically adjust granularity — split nodes when more diagnostic precision is needed, merge when the learner clearly owns the territory.
+Who decides that "TCP handshake" is one concept versus three ("SYN," "SYN-ACK," "ACK")? Granularity determines how useful the trust model is. Too coarse and you can't diagnose gaps. Too fine and it's noise. The system may need to dynamically adjust granularity — split concepts when more diagnostic precision is needed, merge when the person clearly owns the territory.
 
 ### 10.3 Cold Start
-A new learner has an empty trust graph. The first interactions must bootstrap the model without feeling like an intake exam. The session narrative (Section 7.1) proposes starting with conversation and building the model organically. This may be too slow for some learners. The system should offer optional diagnostic assessment for learners who want a faster start.
+A new person has an empty trust graph. The first interactions must bootstrap the model without feeling like an intake exam. The learning OS proposes starting with conversation and building the model organically. Other applications may take different approaches — a hiring process might start with explicit claims ("rate your confidence on these concepts") followed by targeted verification. The engine supports both.
 
 ### 10.4 The LLM-to-Graph Write Problem
-The LLM processes unstructured conversation. The trust graph is structured data. The translation layer between them — extracting trust signals from natural language and writing them accurately to the graph — is where most implementation difficulty will live. The LLM will misclassify signals. Guardrails are needed.
+The LLM processes unstructured interaction. The trust graph is structured data. The translation layer between them — extracting trust signals from natural language and writing them accurately to the graph — is where most implementation difficulty will live. The LLM will misclassify signals. Guardrails are needed. This is the engine services layer's hardest problem.
 
 ### 10.5 Domain Graph Bootstrapping
-Who builds the initial domain knowledge graphs? Options: expert curation (high quality, slow), LLM generation from documentation (fast, variable quality), community contribution (scalable, needs review), emergence from learner behavior (organic, cold start problem). Likely a combination, starting with LLM generation refined by expert review.
+Who builds the initial domain knowledge graphs? Options: expert curation (high quality, slow), LLM generation from documentation (fast, variable quality), community contribution (scalable, needs review), organization-specific creation (for internal systems and processes), emergence from interaction data (organic, cold start problem). Likely a combination, starting with LLM generation refined by expert review.
 
 ### 10.6 The Encryption Tension
-In cloud deployment, the LLM needs plaintext to generate responses. This conflicts with E2E encryption of the trust model. Options: client-side LLM calls, trusted execution environments, or accepting that the cloud model has a weaker security guarantee. This is unresolved.
+The engine core can run fully encrypted client-side (Invariant 6 — trust state is derived from events, no manual overrides needed). But the engine services layer needs plaintext to generate and interpret via LLM. Options: client-side LLM calls, trusted execution environments, or accepting that the services layer has a weaker security guarantee than the core. The core/services split makes this manageable.
 
-### 10.7 Collaborative Learning
-Should the system support learning with others? Study groups, pair debugging, shared maps? This is a scope expansion but aligns with how many people actually learn. Deferred to a future version.
+### 10.7 Cross-Domain Principles
+The principles layer (see domain-schema.md) — abstract ideas that manifest as different concepts in different domains — is not yet built. When it is, it will enable the strongest form of cross-domain trust inference: recognizing that someone who understands acknowledgment-based reliability in TCP has a foundation for understanding write-ahead logging in databases, even though they're different concepts in different domains.
 
-### 10.8 Assessment and Proof
-Should the system produce verifiable proof of learning? This changes the learner's relationship to the tool. Deferred, with a note that the trust graph itself is a form of proof — it's just not externally verifiable in the current design.
+### 10.8 External Verification Quality
+When external systems submit verification events (CI/CD pipelines, HR systems, code review tools), how does the engine assess the quality of that verification? A successful PR deployment is weak evidence of understanding — the code might have been copied. A successful incident response is strong evidence. The engine may need a way to weight external events differently based on the source's reliability.
+
+### 10.9 Claim Gaming
+In adversarial contexts (hiring), people may strategically underclaim to appear humble or overclaim to appear confident. The system should treat claims as hypothesis, not confession. The gap between claims and evidence is diagnostic regardless of whether the claims are sincere — insincere claims are themselves a signal. But the system should not penalize strategic claiming.
