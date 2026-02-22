@@ -2,7 +2,7 @@
 
 ## Current Task
 
-003 — App Shell & Layout
+004 — Conversation UI
 
 ## Quick Status
 
@@ -20,7 +20,7 @@
 |---|------|--------|
 | 001 | Next.js Project Setup | Done |
 | 002 | Networking Domain Package | Done |
-| 003 | App Shell & Layout | Pending |
+| 003 | App Shell & Layout | Done |
 | 004 | Conversation UI | Pending |
 | 005 | Conversation Loop (Backend) | Pending |
 | 006 | Grill Mode | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-002 completed. Networking domain with 19 concepts, 26 edges, 5 territories, 4 thresholds. Loads via engine with zero errors.
+003 completed. Three-panel layout with collapsible map/margin, responsive breakpoints, bottom bar navigation.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 003 — App shell and layout.
+Start 004 — Conversation UI.
