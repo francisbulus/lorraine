@@ -11,7 +11,7 @@
 | Product spec | Done |
 | Tech spec | Done |
 | Design system | Done |
-| Tasks | Done (23 tasks: 001-023) |
+| Tasks | Done (24 tasks: 001-024) |
 | Build | In progress |
 
 ## Task Progress
@@ -41,12 +41,13 @@
 | 021 | Sekiro Prompts (Phase 3) | Pending |
 | 022 | Goals & Path Suggestions (Phase 3) | Pending |
 | 023 | Provision Mode (Phase 3) | Pending |
+| 024 | Conversation Page Feel (Phase 3) | Pending |
 
 ## Phases
 
 - **Phase 1 (001-010):** Conversation + Grill + Claims + MVP Map
 - **Phase 2 (011-015):** Explain + Sandbox + Visual Map + Self-Calibration + Mode Transitions
-- **Phase 3 (016-023):** Layout Redesign + App Wiring + Thresholds + Write + Sketch + Sekiro + Goals + Provision
+- **Phase 3 (016-024):** Layout Redesign + App Wiring + Thresholds + Write + Sketch + Sekiro + Goals + Provision + Page Feel
 
 ## Last Session
 

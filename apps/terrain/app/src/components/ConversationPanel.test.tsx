@@ -101,4 +101,19 @@ describe('ConversationPanel', () => {
     );
     expect(screen.queryByRole('region', { name: /sandbox/i })).not.toBeInTheDocument();
   });
+
+  it('renders input inline when messages exist', () => {
+    render(
+      <ConversationPanel
+        {...defaultProps}
+        messages={[
+          { id: 'msg1', role: 'learner', content: 'What is TCP?' },
+          { id: 'msg2', role: 'agent', content: 'TCP is a transport protocol.' },
+        ]}
+      />
+    );
+    // Input should be present alongside messages (inline, not in empty state)
+    expect(screen.getByText('What is TCP?')).toBeInTheDocument();
+    expect(screen.getByLabelText('Your message')).toBeInTheDocument();
+  });
 });

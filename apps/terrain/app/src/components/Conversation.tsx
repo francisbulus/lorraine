@@ -1,10 +1,9 @@
 'use client';
 
-import { useRef, useEffect, useCallback, useState } from 'react';
+import { useRef } from 'react';
 import Message from './Message';
 import type { MessageRole } from './Message';
 import TrustUpdateAnnotation from './TrustUpdateAnnotation';
-import ConversationInput from './ConversationInput';
 
 export interface ConversationMessage {
   id: string;
@@ -24,34 +23,13 @@ export interface TrustUpdate {
 export interface ConversationProps {
   messages: ConversationMessage[];
   trustUpdates: TrustUpdate[];
-  onSubmit: (text: string) => void;
-  disabled?: boolean;
 }
 
 export default function Conversation({
   messages,
   trustUpdates,
-  onSubmit,
-  disabled = false,
 }: ConversationProps) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [autoScroll, setAutoScroll] = useState(true);
   const lastMessageCount = useRef(0);
-
-  // Auto-scroll to bottom when new messages arrive, unless user scrolled up
-  useEffect(() => {
-    if (autoScroll && scrollRef.current && messages.length > lastMessageCount.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-    lastMessageCount.current = messages.length;
-  }, [messages.length, autoScroll]);
-
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    const isAtBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 40;
-    setAutoScroll(isAtBottom);
-  }, []);
 
   // Group messages and insert trust annotations between them
   const items: Array<
@@ -73,40 +51,35 @@ export default function Conversation({
     }
   }
 
+  lastMessageCount.current = messages.length;
+
   return (
-    <div className="conversation">
-      <div
-        className="conversation__messages"
-        ref={scrollRef}
-        onScroll={handleScroll}
-      >
-        {items.map((item) => {
-          if (item.type === 'trust') {
-            return (
-              <TrustUpdateAnnotation
-                key={item.update.id}
-                conceptId={item.update.conceptId}
-                newLevel={item.update.newLevel}
-                reason={item.update.reason}
-              />
-            );
-          }
-          const spacingClass =
-            item.prevRole && item.prevRole !== item.message.role
-              ? 'conversation__speaker-change'
-              : '';
+    <div className="conversation__messages">
+      {items.map((item) => {
+        if (item.type === 'trust') {
           return (
-            <div key={item.message.id} className={spacingClass}>
-              <Message
-                role={item.message.role}
-                content={item.message.content}
-                isNew={item.isNew}
-              />
-            </div>
+            <TrustUpdateAnnotation
+              key={item.update.id}
+              conceptId={item.update.conceptId}
+              newLevel={item.update.newLevel}
+              reason={item.update.reason}
+            />
           );
-        })}
-      </div>
-      <ConversationInput onSubmit={onSubmit} disabled={disabled} />
+        }
+        const spacingClass =
+          item.prevRole && item.prevRole !== item.message.role
+            ? 'conversation__speaker-change'
+            : '';
+        return (
+          <div key={item.message.id} className={spacingClass}>
+            <Message
+              role={item.message.role}
+              content={item.message.content}
+              isNew={item.isNew}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
