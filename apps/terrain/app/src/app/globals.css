@@ -718,6 +718,134 @@ a {
   border-radius: var(--border-radius);
 }
 
+/* --- Challenge Flow --- */
+.challenge-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--ground-soft);
+  border: 1px solid var(--stone-faint);
+  border-radius: var(--border-radius);
+}
+
+.challenge-flow__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.challenge-flow__name {
+  font-size: var(--text-base);
+  color: var(--chalk);
+}
+
+.challenge-flow__confidence {
+  margin-left: auto;
+  font-size: var(--text-xs);
+  color: var(--stone);
+}
+
+.challenge-flow__basis {
+  font-size: var(--text-xs);
+  color: var(--stone);
+}
+
+.challenge-flow__button {
+  font-size: var(--text-sm);
+  color: var(--chalk);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  text-align: left;
+  text-decoration: underline;
+  text-decoration-color: var(--stone-faint);
+  text-underline-offset: 2px;
+}
+
+.challenge-flow__button:hover {
+  color: var(--lamp);
+  text-decoration-color: var(--lamp-dim);
+}
+
+/* --- Pending Signals --- */
+.pending-signals__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pending-signals__item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--ground-soft);
+  border: 1px solid var(--stone-faint);
+  border-radius: var(--border-radius);
+}
+
+.pending-signals__info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pending-signals__concept {
+  font-size: var(--text-xs);
+  color: var(--chalk-dim);
+}
+
+.pending-signals__type {
+  font-size: var(--text-xs);
+  color: var(--stone);
+}
+
+.pending-signals__evidence {
+  font-size: var(--text-xs);
+  color: var(--chalk-faint);
+}
+
+.pending-signals__actions {
+  display: flex;
+  gap: 12px;
+}
+
+.pending-signals__accept,
+.pending-signals__dismiss {
+  font-size: var(--text-xs);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pending-signals__accept {
+  color: var(--verified);
+}
+
+.pending-signals__accept:hover {
+  color: var(--chalk);
+}
+
+.pending-signals__dismiss {
+  color: var(--stone);
+}
+
+.pending-signals__dismiss:hover {
+  color: var(--chalk-dim);
+}
+
+/* --- Level Change Notification (extended) --- */
+.level-change__reason {
+  display: block;
+  font-size: var(--text-xs);
+  color: var(--stone-dim);
+  margin-top: 2px;
+}
+
 /* --- Margin Panel Detail --- */
 .margin-panel__detail {
   animation: margin-crossfade 200ms var(--ease-appear) both;

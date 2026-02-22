@@ -2,7 +2,7 @@
 
 ## Current Task
 
-009 — Event Visibility & Challengeability
+010 — Session Management
 
 ## Quick Status
 
@@ -26,7 +26,7 @@
 | 006 | Grill Mode | Done |
 | 007 | Territory List View (MVP Map) | Done |
 | 008 | Margin Panel | Done |
-| 009 | Event Visibility & Challengeability | Pending |
+| 009 | Event Visibility & Challengeability | Done |
 | 010 | Session Management | Pending |
 | 011 | Explain Mode (Phase 2) | Pending |
 | 012 | Sandbox Mode (Phase 2) | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-008 completed. Margin panel: ConceptDetail with lamp glow, VerificationHistory (sorted, color-coded), ClaimHistory (calibration gap), ReasoningTrace (collapsible). 141 terrain tests, 79 engine tests, zero regressions.
+009 completed. Event visibility: level-change notifications with auto-dismiss, challenge flow with "test me on this", quiet mode with pending signal buffering. 168 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 009 — Event visibility & challengeability.
+Start 010 — Session management.
