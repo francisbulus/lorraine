@@ -2,28 +2,28 @@
 
 import { useState } from 'react';
 
-export type AppState = 'conversation' | 'map';
-
 export interface TopBarProps {
-  appState: AppState;
-  onToggleState: () => void;
   onCalibrationClick: () => void;
   sessionStart: number;
   hasCalibrationData?: boolean;
+  focusedConcept?: string | null;
 }
 
 export default function TopBar({
-  appState,
-  onToggleState,
   onCalibrationClick,
   sessionStart,
   hasCalibrationData = false,
+  focusedConcept,
 }: TopBarProps) {
   return (
     <header className="top-bar">
       <span className="top-bar__title font-system">terrain</span>
 
       <div className="top-bar__actions">
+        {focusedConcept && (
+          <span className="top-bar__focus font-data">{focusedConcept}</span>
+        )}
+
         {hasCalibrationData && (
           <button
             className="top-bar__calibration font-system"
@@ -36,14 +36,6 @@ export default function TopBar({
         )}
 
         <SessionDuration startTime={sessionStart} />
-
-        <button
-          className="top-bar__toggle font-system"
-          onClick={onToggleState}
-          aria-label={appState === 'conversation' ? 'Switch to map' : 'Switch to conversation'}
-        >
-          {appState === 'conversation' ? 'map' : '← conversation'}
-        </button>
       </div>
     </header>
   );

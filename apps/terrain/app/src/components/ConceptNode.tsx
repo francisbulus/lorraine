@@ -1,8 +1,19 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { TrustLevel } from '@engine/types';
-import { getNodeSize, getNodeColor, getNodeStrokeDash, getLabelColor } from '../lib/map-layout';
+import {
+  deriveVisualTrustState,
+  getNodeSize,
+  getNodeColor,
+  getNodeStrokeDash,
+  getNodeStrokeWidth,
+  getNodeFill,
+  getNodeFillOpacity,
+  getLabelColor,
+  getLabelFont,
+  getLabelSize,
+} from '../lib/map-layout';
 
 export interface ConceptNodeProps {
   id: string;
@@ -10,6 +21,7 @@ export interface ConceptNodeProps {
   x: number;
   y: number;
   trustLevel: TrustLevel;
+  decayedConfidence?: number;
   isActive?: boolean;
   onClick?: (conceptId: string) => void;
 }
@@ -20,16 +32,34 @@ export default function ConceptNode({
   x,
   y,
   trustLevel,
+  decayedConfidence,
   isActive = false,
   onClick,
 }: ConceptNodeProps) {
   const [hovered, setHovered] = useState(false);
-  const size = getNodeSize(trustLevel);
-  const color = getNodeColor(trustLevel);
-  const isFilled = trustLevel === 'verified';
-  const isContested = trustLevel === 'contested';
-  const strokeDash = getNodeStrokeDash(trustLevel);
-  const labelColor = getLabelColor(trustLevel, hovered);
+  const [flashing, setFlashing] = useState(false);
+  const prevTrustLevel = useRef(trustLevel);
+
+  useEffect(() => {
+    if (prevTrustLevel.current !== trustLevel) {
+      prevTrustLevel.current = trustLevel;
+      setFlashing(true);
+      const timer = setTimeout(() => setFlashing(false), 400);
+      return () => clearTimeout(timer);
+    }
+  }, [trustLevel]);
+
+  const visualState = deriveVisualTrustState(trustLevel, decayedConfidence);
+  const size = getNodeSize(visualState);
+  const color = getNodeColor(visualState);
+  const fill = getNodeFill(visualState);
+  const fillOpacity = getNodeFillOpacity(visualState);
+  const strokeDash = getNodeStrokeDash(visualState);
+  const strokeWidth = getNodeStrokeWidth(visualState);
+  const labelColor = getLabelColor(visualState, hovered);
+  const labelFont = getLabelFont(visualState);
+  const labelSize = getLabelSize(visualState);
+  const isContested = visualState === 'contested';
 
   return (
     <g
@@ -40,7 +70,18 @@ export default function ConceptNode({
       style={{ cursor: 'pointer' }}
       role="button"
       aria-label={`${name}: ${trustLevel}`}
+      className={flashing ? 'trust-change-flash' : undefined}
     >
+      {/* Trust change flash glow */}
+      {flashing && (
+        <circle
+          r={size + 8}
+          fill="var(--lamp-glow)"
+          opacity={0.8}
+          className="trust-change-flash__glow"
+        />
+      )}
+
       {/* Hover glow ring */}
       {hovered && (
         <circle
@@ -73,11 +114,15 @@ export default function ConceptNode({
       {/* Node circle */}
       <circle
         r={size}
-        fill={isFilled ? color : 'none'}
+        fill={isContested ? 'none' : fill}
+        fillOpacity={isContested ? undefined : fillOpacity}
         stroke={color}
-        strokeWidth={isFilled ? 0 : 1.5}
+        strokeWidth={fill === 'none' || isContested ? strokeWidth : 0}
         strokeDasharray={strokeDash}
         className={isContested ? 'concept-node--contested' : undefined}
+        style={{
+          transition: 'fill 300ms var(--ease-settle), stroke 300ms var(--ease-settle), r 300ms var(--ease-settle)',
+        }}
       />
 
       {/* Half-fill for contested */}
@@ -95,8 +140,8 @@ export default function ConceptNode({
         y={size + 12}
         textAnchor="middle"
         fill={labelColor}
-        fontSize={9}
-        fontFamily="var(--font-data)"
+        fontSize={labelSize}
+        fontFamily={labelFont}
       >
         {name.length > 16 ? name.slice(0, 14) + '…' : name}
       </text>

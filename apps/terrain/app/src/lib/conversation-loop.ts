@@ -81,6 +81,11 @@ Rules:
 - When the learner connects concepts across domains, prompt recognition, don't hand them the connection.
 - Calibrate explanation depth to the learner's trust state on prerequisites.
 
+Sandbox:
+- The sandbox runs JavaScript only (in-browser, no Node.js). When suggesting code or opening the sandbox, use JavaScript.
+- If a concept is best explained in another language (e.g. Python for raw sockets), show that as explanation but note the sandbox is JS and provide a JS equivalent if the learner wants to experiment.
+- When transitioning to sandbox mode, give the learner a clear prompt for what to build — e.g. "try implementing a basic acknowledgment system with a sender and receiver." The sandbox opens empty; the learner writes from scratch to demonstrate understanding.
+
 Your responses should be concise, conversational, and honest. You speak in natural language.
 The serif typography will distinguish your voice — you don't need to announce yourself.`;
 
@@ -316,7 +321,9 @@ export function createConversationLoop(config: ConversationLoopConfig) {
       llm,
       history,
       trustStates,
-      trustUpdates
+      trustUpdates,
+      undefined,
+      targetConcept
     );
     history.push({ role: 'agent', content: agentResponse });
 
@@ -516,6 +523,56 @@ export function createConversationLoop(config: ConversationLoopConfig) {
     return grillEngine.hasPendingGrill();
   }
 
+  async function focusConcept(conceptId: string): Promise<ConversationLoopResult> {
+    const now = Date.now();
+    const trustStates = buildTrustStates(now);
+    const state = trustStates[conceptId];
+    const level = state?.level ?? 'untested';
+    const visualState = (level === 'verified' && state?.decayedConfidence !== undefined && state.decayedConfidence < 0.5)
+      ? 'decayed'
+      : level;
+
+    let contextBlock: string;
+    switch (visualState) {
+      case 'untested':
+        contextBlock = `Learner clicked untested concept ${conceptId}. Introduce it, probe what they know.`;
+        break;
+      case 'inferred':
+        contextBlock = `Learner clicked inferred concept ${conceptId}. Explore whether their assumed understanding holds.`;
+        break;
+      case 'verified':
+        contextBlock = `Learner clicked verified concept ${conceptId}. Offer deeper exploration or connections.`;
+        break;
+      case 'contested':
+        contextBlock = `Learner clicked contested concept ${conceptId}. Acknowledge mixed signals, explore the gap.`;
+        break;
+      case 'decayed':
+        contextBlock = `Learner clicked concept ${conceptId} they once verified but haven't engaged with recently. Gentle re-verification.`;
+        break;
+      default:
+        contextBlock = `Learner clicked concept ${conceptId}. Introduce it.`;
+    }
+
+    const agentResponse = await generateAgentResponse(
+      llm,
+      history,
+      trustStates,
+      [],
+      undefined,
+      undefined,
+      contextBlock
+    );
+
+    history.push({ role: 'agent', content: agentResponse });
+
+    return {
+      agentResponse,
+      trustUpdates: [],
+      candidateSignals: [],
+      mode: modeManager.getCurrentMode(),
+    };
+  }
+
   return {
     processUtterance,
     getHistory,
@@ -527,6 +584,7 @@ export function createConversationLoop(config: ConversationLoopConfig) {
     getCurrentMode,
     isSandboxActive,
     getSandboxConceptId,
+    focusConcept,
   };
 }
 
@@ -535,7 +593,9 @@ async function generateAgentResponse(
   history: ConversationTurn[],
   trustStates: Record<string, TrustState>,
   recentUpdates: TrustUpdateResult[],
-  grillResult?: GrillResult
+  grillResult?: GrillResult,
+  sandboxConceptId?: string,
+  focusContext?: string
 ): Promise<string> {
   const contextParts: string[] = [];
 
@@ -572,20 +632,46 @@ async function generateAgentResponse(
     contextParts.push('');
   }
 
+  // Add sandbox transition context if entering sandbox mode.
+  if (sandboxConceptId) {
+    contextParts.push(`Sandbox opening for concept: ${sandboxConceptId}. The sandbox runs JavaScript only (in-browser).`);
+    contextParts.push('Frame a clear challenge for the learner to build from scratch — tell them what to try writing. The sandbox opens empty; the learner writes code to demonstrate understanding. Do not show code for them to copy — prompt them to construct it themselves. Use JavaScript in any examples.');
+    contextParts.push('');
+  }
+
+  // Add focus concept context if provided.
+  if (focusContext) {
+    contextParts.push(focusContext);
+    contextParts.push('');
+  }
+
   // Build message history for LLM.
   const messages = history.map((t) => ({
     role: t.role === 'agent' ? ('assistant' as const) : ('user' as const),
     content: t.content,
   }));
 
-  // Prepend context to the last user message.
-  if (contextParts.length > 0 && messages.length > 0) {
-    const last = messages[messages.length - 1];
-    if (last.role === 'user') {
-      messages[messages.length - 1] = {
-        ...last,
-        content: `[Context for your response — not visible to learner]\n${contextParts.join('\n')}\n\n[Learner says]\n${last.content}`,
-      };
+  // Prepend context to the last user message, or create a user message if empty.
+  if (contextParts.length > 0) {
+    if (messages.length > 0) {
+      const last = messages[messages.length - 1];
+      if (last.role === 'user') {
+        messages[messages.length - 1] = {
+          ...last,
+          content: `[Context for your response — not visible to learner]\n${contextParts.join('\n')}\n\n[Learner says]\n${last.content}`,
+        };
+      } else {
+        // No user message to attach to — add context as a user message.
+        messages.push({
+          role: 'user',
+          content: `[Context for your response — not visible to learner]\n${contextParts.join('\n')}`,
+        });
+      }
+    } else {
+      messages.push({
+        role: 'user',
+        content: `[Context for your response — not visible to learner]\n${contextParts.join('\n')}`,
+      });
     }
   }
 

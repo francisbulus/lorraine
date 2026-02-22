@@ -4,8 +4,16 @@ import {
   getNodeSize,
   getNodeColor,
   getNodeStrokeDash,
+  getNodeStrokeWidth,
+  getNodeFill,
+  getNodeFillOpacity,
   getLabelColor,
+  getLabelFont,
+  getLabelSize,
   computeTerritoryZones,
+  deriveVisualTrustState,
+  computeZoneOpacity,
+  computeZoneLabelColor,
 } from './map-layout';
 
 describe('computeLayout', () => {
@@ -117,6 +125,26 @@ describe('computeLayout', () => {
   });
 });
 
+describe('deriveVisualTrustState', () => {
+  it('returns decayed when verified and confidence < 0.5', () => {
+    expect(deriveVisualTrustState('verified', 0.3)).toBe('decayed');
+  });
+
+  it('returns verified when verified and confidence >= 0.5', () => {
+    expect(deriveVisualTrustState('verified', 0.8)).toBe('verified');
+  });
+
+  it('returns original trust level when not verified', () => {
+    expect(deriveVisualTrustState('untested', 0.1)).toBe('untested');
+    expect(deriveVisualTrustState('inferred', 0.3)).toBe('inferred');
+    expect(deriveVisualTrustState('contested', 0.2)).toBe('contested');
+  });
+
+  it('returns original trust level when decayedConfidence undefined', () => {
+    expect(deriveVisualTrustState('verified')).toBe('verified');
+  });
+});
+
 describe('getNodeSize', () => {
   it('verified is largest', () => {
     expect(getNodeSize('verified')).toBeGreaterThan(getNodeSize('untested'));
@@ -126,8 +154,20 @@ describe('getNodeSize', () => {
     expect(getNodeSize('inferred')).toBeLessThan(getNodeSize('verified'));
   });
 
-  it('untested is smallest', () => {
-    expect(getNodeSize('untested')).toBeLessThanOrEqual(getNodeSize('inferred'));
+  it('untested matches spec size', () => {
+    expect(getNodeSize('untested')).toBe(5);
+  });
+
+  it('verified is 10', () => {
+    expect(getNodeSize('verified')).toBe(10);
+  });
+
+  it('decayed is 5', () => {
+    expect(getNodeSize('decayed')).toBe(5);
+  });
+
+  it('contested is 7', () => {
+    expect(getNodeSize('contested')).toBe(7);
   });
 });
 
@@ -138,11 +178,41 @@ describe('getNodeColor', () => {
     expect(getNodeColor('inferred')).toBe('var(--inferred)');
     expect(getNodeColor('untested')).toBe('var(--fog)');
   });
+
+  it('returns --stone for decayed', () => {
+    expect(getNodeColor('decayed')).toBe('var(--stone)');
+  });
+});
+
+describe('getNodeFill', () => {
+  it('returns none for untested', () => {
+    expect(getNodeFill('untested')).toBe('none');
+  });
+
+  it('returns verified color for verified', () => {
+    expect(getNodeFill('verified')).toBe('var(--verified)');
+  });
+
+  it('returns inferred-faint for inferred', () => {
+    expect(getNodeFill('inferred')).toBe('var(--inferred-faint)');
+  });
+
+  it('returns contested-faint for contested', () => {
+    expect(getNodeFill('contested')).toBe('var(--contested-faint)');
+  });
+
+  it('returns stone-faint for decayed', () => {
+    expect(getNodeFill('decayed')).toBe('var(--stone-faint)');
+  });
 });
 
 describe('getNodeStrokeDash', () => {
   it('returns dash pattern for untested', () => {
     expect(getNodeStrokeDash('untested')).toBe('2 2');
+  });
+
+  it('returns dash pattern for decayed', () => {
+    expect(getNodeStrokeDash('decayed')).toBe('3 3');
   });
 
   it('returns undefined for verified', () => {
@@ -155,6 +225,60 @@ describe('getNodeStrokeDash', () => {
 
   it('returns undefined for contested', () => {
     expect(getNodeStrokeDash('contested')).toBeUndefined();
+  });
+});
+
+describe('getNodeStrokeWidth', () => {
+  it('verified is 2', () => {
+    expect(getNodeStrokeWidth('verified')).toBe(2);
+  });
+
+  it('contested is 2', () => {
+    expect(getNodeStrokeWidth('contested')).toBe(2);
+  });
+
+  it('inferred is 1.5', () => {
+    expect(getNodeStrokeWidth('inferred')).toBe(1.5);
+  });
+
+  it('decayed is 1.5', () => {
+    expect(getNodeStrokeWidth('decayed')).toBe(1.5);
+  });
+
+  it('untested is 1', () => {
+    expect(getNodeStrokeWidth('untested')).toBe(1);
+  });
+});
+
+describe('getLabelFont', () => {
+  it('verified uses --font-voice', () => {
+    expect(getLabelFont('verified')).toBe('var(--font-voice)');
+  });
+
+  it('contested uses --font-voice', () => {
+    expect(getLabelFont('contested')).toBe('var(--font-voice)');
+  });
+
+  it('others use --font-data', () => {
+    expect(getLabelFont('untested')).toBe('var(--font-data)');
+    expect(getLabelFont('inferred')).toBe('var(--font-data)');
+    expect(getLabelFont('decayed')).toBe('var(--font-data)');
+  });
+});
+
+describe('getLabelSize', () => {
+  it('verified is 11', () => {
+    expect(getLabelSize('verified')).toBe(11);
+  });
+
+  it('contested is 11', () => {
+    expect(getLabelSize('contested')).toBe(11);
+  });
+
+  it('others are 9', () => {
+    expect(getLabelSize('untested')).toBe(9);
+    expect(getLabelSize('inferred')).toBe(9);
+    expect(getLabelSize('decayed')).toBe(9);
   });
 });
 
@@ -175,6 +299,10 @@ describe('getLabelColor', () => {
 
   it('returns --stone-dim for untested', () => {
     expect(getLabelColor('untested', false)).toBe('var(--stone-dim)');
+  });
+
+  it('returns --stone-dim for decayed', () => {
+    expect(getLabelColor('decayed', false)).toBe('var(--stone-dim)');
   });
 });
 
@@ -215,8 +343,35 @@ describe('computeTerritoryZones', () => {
     const zones = computeTerritoryZones(nodes, [
       { id: 't1', name: 'All', conceptIds: ['a', 'b', 'c'] },
     ]);
-    // centroid is at (200, ~167), max spread > 50 in each axis
     expect(zones[0].radiusX).toBeGreaterThan(50);
     expect(zones[0].radiusY).toBeGreaterThan(50);
+  });
+});
+
+describe('computeZoneOpacity', () => {
+  it('returns 0.05 at 0% ownership', () => {
+    expect(computeZoneOpacity(0)).toBeCloseTo(0.05);
+  });
+
+  it('returns 0.15 at 100% ownership', () => {
+    expect(computeZoneOpacity(100)).toBeCloseTo(0.15);
+  });
+
+  it('returns 0.10 at 50% ownership', () => {
+    expect(computeZoneOpacity(50)).toBeCloseTo(0.10);
+  });
+});
+
+describe('computeZoneLabelColor', () => {
+  it('returns --chalk-faint for low ownership', () => {
+    expect(computeZoneLabelColor(20)).toBe('var(--chalk-faint)');
+  });
+
+  it('returns --chalk-dim for medium ownership', () => {
+    expect(computeZoneLabelColor(60)).toBe('var(--chalk-dim)');
+  });
+
+  it('returns --chalk for high ownership', () => {
+    expect(computeZoneLabelColor(80)).toBe('var(--chalk)');
   });
 });

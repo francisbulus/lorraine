@@ -320,6 +320,59 @@ describe('useSession', () => {
     expect(sandboxResult!.annotation).toBe('The code logs a string.');
   });
 
+  it('focusConcept sends correct action and adds agent message', async () => {
+    // First init the session
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        sessionId: 'test-session',
+        concepts: [{ id: 'tcp', name: 'TCP', trustLevel: 'untested' }],
+        edges: [],
+        territories: [],
+        trustStates: {},
+        calibration: null,
+      }),
+    } as Response);
+
+    const { result } = renderHook(() => useSession());
+
+    await act(async () => {
+      await result.current.initSession();
+    });
+
+    // Now focus a concept
+    fetchSpy.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        sessionId: 'test-session',
+        agentResponse: 'TCP is a fundamental transport protocol. What do you know about it?',
+        trustUpdates: [],
+        mode: 'conversation',
+        concepts: [{ id: 'tcp', name: 'TCP', trustLevel: 'untested' }],
+        edges: [],
+        territories: [],
+        trustStates: {},
+        calibration: null,
+      }),
+    } as Response);
+
+    await act(async () => {
+      await result.current.focusConcept('tcp');
+    });
+
+    expect(result.current.focusedConceptId).toBe('tcp');
+    expect(result.current.messages).toHaveLength(1);
+    expect(result.current.messages[0].role).toBe('agent');
+    expect(result.current.messages[0].content).toContain('TCP');
+    expect(result.current.loading).toBe(false);
+
+    // Verify the fetch call
+    const lastCall = fetchSpy.mock.calls[fetchSpy.mock.calls.length - 1];
+    const body = JSON.parse(lastCall[1]!.body as string);
+    expect(body.action).toBe('focus-concept');
+    expect(body.conceptId).toBe('tcp');
+  });
+
   it('closeSandbox resets sandbox state', async () => {
     // Setup sandbox active state
     fetchSpy.mockResolvedValueOnce({

@@ -25,6 +25,7 @@ export interface SessionState {
   mode: Mode;
   sandboxActive: boolean;
   sandboxConceptId: string | null;
+  focusedConceptId: string | null;
 }
 
 export interface SandboxRunResponse {
@@ -49,6 +50,7 @@ export function useSession() {
     mode: 'conversation',
     sandboxActive: false,
     sandboxConceptId: null,
+    focusedConceptId: null,
   });
 
   const messageCounter = useRef(0);
@@ -254,6 +256,73 @@ export function useSession() {
     [state.trustStates]
   );
 
+  const focusConcept = useCallback(async (conceptId: string) => {
+    setState((prev) => ({
+      ...prev,
+      loading: true,
+      error: null,
+      focusedConceptId: conceptId,
+    }));
+
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'focus-concept',
+          conceptId,
+          sessionId: state.sessionId,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+
+      // Add agent message.
+      const agentId = `msg_${++messageCounter.current}`;
+      const agentMessage: ConversationMessage = {
+        id: agentId,
+        role: 'agent',
+        content: data.agentResponse,
+      };
+
+      // Build trust updates.
+      const newTrustUpdates: TrustUpdate[] = (data.trustUpdates ?? []).map(
+        (u: { conceptId: string; newLevel: string; reason: string }) => ({
+          id: `tu_${++trustUpdateCounter.current}`,
+          afterMessageId: agentId,
+          conceptId: u.conceptId,
+          newLevel: u.newLevel,
+          reason: u.reason,
+        })
+      );
+
+      setState((prev) => ({
+        ...prev,
+        sessionId: data.sessionId ?? prev.sessionId,
+        messages: [...prev.messages, agentMessage],
+        trustUpdates: [...prev.trustUpdates, ...newTrustUpdates],
+        trustStates: data.trustStates ?? prev.trustStates,
+        concepts: data.concepts ?? prev.concepts,
+        edges: data.edges ?? prev.edges,
+        territories: data.territories ?? prev.territories,
+        calibration: data.calibration ?? prev.calibration,
+        loading: false,
+        mode: data.mode ?? prev.mode,
+      }));
+    } catch (err) {
+      setState((prev) => ({
+        ...prev,
+        loading: false,
+        error: err instanceof Error ? err.message : 'Something went wrong',
+      }));
+    }
+  }, [state.sessionId]);
+
   return {
     ...state,
     sendMessage,
@@ -261,5 +330,6 @@ export function useSession() {
     getTrustStateForConcept,
     runSandboxCode,
     closeSandbox,
+    focusConcept,
   };
 }

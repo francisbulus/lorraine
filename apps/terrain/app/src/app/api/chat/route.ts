@@ -81,6 +81,7 @@ function getSessionState(session: SessionData) {
     id: c.id,
     name: c.name,
     trustLevel: trustStates[c.id]?.level ?? 'untested',
+    decayedConfidence: trustStates[c.id]?.decayedConfidence ?? 0,
   }));
 
   // Build edges for the visual map.
@@ -106,8 +107,9 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as {
       message?: string;
       sessionId?: string;
-      action?: 'init' | 'chat' | 'state' | 'sandbox-run' | 'end-mode';
+      action?: 'init' | 'chat' | 'state' | 'sandbox-run' | 'end-mode' | 'focus-concept';
       code?: string;
+      conceptId?: string;
     };
 
     const sessionId =
@@ -183,6 +185,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({
         sessionId,
         mode: session.loop.getCurrentMode(),
+        ...state,
+      });
+    }
+
+    // Focus-concept action: generate contextual opening for a concept.
+    if (action === 'focus-concept') {
+      if (!body.conceptId || typeof body.conceptId !== 'string') {
+        return NextResponse.json(
+          { error: 'conceptId is required for focus-concept' },
+          { status: 400 }
+        );
+      }
+
+      const result = await session.loop.focusConcept(body.conceptId);
+      const state = getSessionState(session);
+
+      return NextResponse.json({
+        sessionId,
+        agentResponse: result.agentResponse,
+        trustUpdates: result.trustUpdates,
+        mode: result.mode,
         ...state,
       });
     }

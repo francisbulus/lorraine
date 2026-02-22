@@ -5,10 +5,10 @@ import MapPanel from './MapPanel';
 import type { VisualMapConcept, VisualMapEdge } from './VisualMap';
 
 const concepts: VisualMapConcept[] = [
-  { id: 'tcp-basics', name: 'TCP Basics', trustLevel: 'verified' },
-  { id: 'tcp-handshake', name: 'TCP Handshake', trustLevel: 'inferred' },
-  { id: 'tcp-retransmission', name: 'TCP Retransmission', trustLevel: 'contested' },
-  { id: 'flow-control', name: 'Flow Control', trustLevel: 'untested' },
+  { id: 'tcp-basics', name: 'TCP Basics', trustLevel: 'verified', decayedConfidence: 0.9 },
+  { id: 'tcp-handshake', name: 'TCP Handshake', trustLevel: 'inferred', decayedConfidence: 0.6 },
+  { id: 'tcp-retransmission', name: 'TCP Retransmission', trustLevel: 'contested', decayedConfidence: 0.4 },
+  { id: 'flow-control', name: 'Flow Control', trustLevel: 'untested', decayedConfidence: 0 },
 ];
 
 const edges: VisualMapEdge[] = [
@@ -85,6 +85,26 @@ describe('VisualMap', () => {
     const labels = Array.from(texts).map((t) => t.textContent);
     expect(labels).toContain('TCP Basics');
     expect(labels).toContain('Flow Control');
+  });
+});
+
+describe('ConceptNode trust change flash', () => {
+  it('applies flash class when trust level changes', () => {
+    const initialConcepts: VisualMapConcept[] = [
+      { id: 'tcp-basics', name: 'TCP Basics', trustLevel: 'untested', decayedConfidence: 0 },
+    ];
+    const updatedConcepts: VisualMapConcept[] = [
+      { id: 'tcp-basics', name: 'TCP Basics', trustLevel: 'inferred', decayedConfidence: 0.6 },
+    ];
+
+    const { container, rerender } = render(
+      <VisualMap concepts={initialConcepts} edges={[]} />
+    );
+
+    rerender(<VisualMap concepts={updatedConcepts} edges={[]} />);
+
+    const flashElements = container.querySelectorAll('.trust-change-flash');
+    expect(flashElements.length).toBe(1);
   });
 });
 

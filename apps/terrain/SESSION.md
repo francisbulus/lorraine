@@ -43,15 +43,27 @@
 | 023 | Provision Mode (Phase 3) | Pending |
 | 024 | Conversation Page Feel (Phase 3) | Pending |
 
+## Experience Tasks (Map-First Redesign)
+
+| # | Task | Status |
+|---|------|--------|
+| E-001 | Map as Home + Split Layout | Done |
+| E-002 | Node Visual Overhaul (5 States) | Done |
+| E-003 | Focus-Concept API + Scoped Opening | Done |
+| E-004 | Edge + Territory Visual Updates | Done |
+| E-005 | Real-Time Map Updates + Trust Change Flash | Done |
+| E-006 | Test Suite Alignment | Done |
+
 ## Phases
 
 - **Phase 1 (001-010):** Conversation + Grill + Claims + MVP Map
 - **Phase 2 (011-015):** Explain + Sandbox + Visual Map + Self-Calibration + Mode Transitions
 - **Phase 3 (016-024):** Layout Redesign + App Wiring + Thresholds + Write + Sketch + Sekiro + Goals + Provision + Page Feel
+- **Experience Tasks (E-001–E-006):** Map-first architecture, 5-state node visuals, focus-concept API, edge/territory visuals, real-time map updates
 
 ## Last Session
 
-Visual map polish: aligned map rendering with design system. ConceptNode now shows persistent labels below nodes (--font-data, trust-level-based colors, brightens to --chalk on hover), hover glow ring (--lamp-glow), untested dotted stroke via getNodeStrokeDash. GraphEdge accepts trust levels and edge type — edges between verified concepts are more visible (--stone), untested barely visible (--stone-faint), prerequisite edges thicker than related_to. VisualMap renders territory zones as blurred SVG ellipses (watercolor wash) with territory labels (--font-voice), momentum pan/zoom with velocity damping on release. MapView determines active territory from activeConcept and passes active prop to TerritoryCard (--lamp left border). map-layout.ts gained computeTerritoryZones, getNodeStrokeDash, getLabelColor; LayoutEdge changed from fromVerified/toVerified booleans to fromTrustLevel/toTrustLevel TrustLevel values. 395 terrain tests (+17 new), 79 engine tests, zero regressions.
+Map-first architecture redesign (experience tasks E-001–E-006). Inverted the app: map IS the app, conversation is a tool opened from the map. AppShell now defaults to full-viewport map with all concepts visible. Click concept → 40/60 split layout (map left, conversation right) with agent generating contextual opening based on trust state. Escape → back to full map. Removed "What do you want to learn?" empty state, toggle button, territory card sidebar. ConceptNode now supports 5 visual states (verified/inferred/untested/contested/decayed) with distinct size, fill, stroke, label font/size. Verified nodes are largest (10px) with serif labels. Edges scale by trust (untested↔untested nearly invisible at 0.5px, verified↔verified at 1px). Territory zones scale opacity with ownership (5%→15%). Nodes flash on trust change (400ms lamp glow). Added focusConcept API to conversation-loop, route, and useSession. 423 terrain tests (+28 new), 79 engine tests, zero failures.
 
 ## Blockers
 

@@ -38,6 +38,8 @@ export interface LayoutInput {
   edges: { from: string; to: string; type: string }[];
 }
 
+export type VisualTrustState = 'verified' | 'inferred' | 'untested' | 'contested' | 'decayed';
+
 // Simple force-directed layout.
 // Not physics-accurate but stable and deterministic enough for a map panel.
 const REPULSION = 2000;
@@ -161,37 +163,94 @@ export function computeLayout(input: LayoutInput): LayoutResult {
   };
 }
 
-export function getNodeSize(trustLevel: TrustLevel): number {
+export function deriveVisualTrustState(
+  trustLevel: TrustLevel,
+  decayedConfidence?: number
+): VisualTrustState {
+  if (trustLevel === 'verified' && decayedConfidence !== undefined && decayedConfidence < 0.5) {
+    return 'decayed';
+  }
+  return trustLevel as VisualTrustState;
+}
+
+export function getNodeSize(trustLevel: TrustLevel | VisualTrustState): number {
   switch (trustLevel) {
-    case 'verified': return 8;
-    case 'contested': return 6;
+    case 'verified': return 10;
+    case 'contested': return 7;
     case 'inferred': return 6;
-    case 'untested': return 4;
-    default: return 4;
+    case 'decayed': return 5;
+    case 'untested': return 5;
+    default: return 5;
   }
 }
 
-export function getNodeColor(trustLevel: TrustLevel): string {
+export function getNodeColor(trustLevel: TrustLevel | VisualTrustState): string {
   switch (trustLevel) {
     case 'verified': return 'var(--verified)';
     case 'contested': return 'var(--contested)';
     case 'inferred': return 'var(--inferred)';
+    case 'decayed': return 'var(--stone)';
     case 'untested': return 'var(--fog)';
     default: return 'var(--stone)';
   }
 }
 
-export function getNodeStrokeDash(trustLevel: TrustLevel): string | undefined {
+export function getNodeFill(state: VisualTrustState): string {
+  switch (state) {
+    case 'verified': return 'var(--verified)';
+    case 'contested': return 'var(--contested-faint)';
+    case 'inferred': return 'var(--inferred-faint)';
+    case 'decayed': return 'var(--stone-faint)';
+    case 'untested': return 'none';
+    default: return 'none';
+  }
+}
+
+export function getNodeFillOpacity(state: VisualTrustState): number {
+  switch (state) {
+    case 'verified': return 1.0;
+    case 'contested': return 0.4;
+    case 'inferred': return 0.3;
+    case 'decayed': return 0.2;
+    case 'untested': return 0;
+    default: return 0;
+  }
+}
+
+export function getNodeStrokeDash(trustLevel: TrustLevel | VisualTrustState): string | undefined {
   if (trustLevel === 'untested') return '2 2';
+  if (trustLevel === 'decayed') return '3 3';
   return undefined;
 }
 
-export function getLabelColor(trustLevel: TrustLevel, hovered: boolean): string {
+export function getNodeStrokeWidth(state: VisualTrustState): number {
+  switch (state) {
+    case 'verified': return 2;
+    case 'contested': return 2;
+    case 'inferred': return 1.5;
+    case 'decayed': return 1.5;
+    case 'untested': return 1;
+    default: return 1;
+  }
+}
+
+export function getLabelFont(state: VisualTrustState): string {
+  if (state === 'verified' || state === 'contested') return 'var(--font-voice)';
+  return 'var(--font-data)';
+}
+
+export function getLabelSize(state: VisualTrustState): number {
+  if (state === 'verified' || state === 'contested') return 11;
+  return 9;
+}
+
+export function getLabelColor(trustLevel: TrustLevel | VisualTrustState, hovered: boolean): string {
   if (hovered) return 'var(--chalk)';
   switch (trustLevel) {
     case 'verified': return 'var(--chalk-dim)';
     case 'contested': return 'var(--chalk-faint)';
     case 'inferred': return 'var(--chalk-faint)';
+    case 'decayed': return 'var(--stone-dim)';
     case 'untested': return 'var(--stone-dim)';
     default: return 'var(--stone-dim)';
   }
@@ -226,4 +285,14 @@ export function computeTerritoryZones(
       };
     })
     .filter((z): z is TerritoryZone => z !== null);
+}
+
+export function computeZoneOpacity(ownershipPercent: number): number {
+  return 0.05 + (ownershipPercent / 100) * 0.10;
+}
+
+export function computeZoneLabelColor(ownershipPercent: number): string {
+  if (ownershipPercent >= 75) return 'var(--chalk)';
+  if (ownershipPercent >= 50) return 'var(--chalk-dim)';
+  return 'var(--chalk-faint)';
 }

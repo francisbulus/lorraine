@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useRef, useCallback, useEffect } from 'react';
 import type { TrustLevel } from '@engine/types';
-import { computeLayout, computeTerritoryZones, type LayoutNode } from '../lib/map-layout';
+import { computeLayout, computeTerritoryZones, computeZoneOpacity, computeZoneLabelColor, type LayoutNode } from '../lib/map-layout';
 import ConceptNode from './ConceptNode';
 import GraphEdge from './GraphEdge';
 
@@ -11,6 +11,7 @@ export interface VisualMapConcept {
   name: string;
   trustLevel: TrustLevel;
   territory?: string;
+  decayedConfidence?: number;
 }
 
 export interface VisualMapEdge {
@@ -55,10 +56,36 @@ export default function VisualMap({
     return map;
   }, [layout.nodes]);
 
+  // Build a map of decayedConfidence from concepts prop.
+  const decayedConfidenceMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const c of concepts) {
+      if (c.decayedConfidence !== undefined) {
+        map.set(c.id, c.decayedConfidence);
+      }
+    }
+    return map;
+  }, [concepts]);
+
   const zones = useMemo(
     () => computeTerritoryZones(layout.nodes, territories),
     [layout.nodes, territories]
   );
+
+  // Compute ownership percentage per territory.
+  const zoneOwnership = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const t of territories) {
+      const conceptsInTerritory = concepts.filter((c) => t.conceptIds.includes(c.id));
+      if (conceptsInTerritory.length === 0) {
+        map.set(t.id, 0);
+        continue;
+      }
+      const verified = conceptsInTerritory.filter((c) => c.trustLevel === 'verified' || c.trustLevel === 'inferred').length;
+      map.set(t.id, (verified / conceptsInTerritory.length) * 100);
+    }
+    return map;
+  }, [concepts, territories]);
 
   // Pan and zoom state.
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -169,29 +196,32 @@ export default function VisualMap({
 
       <g transform={`translate(${offset.x}, ${offset.y}) scale(${scale})`}>
         {/* Territory zones — watercolor wash behind clusters */}
-        {zones.map((zone) => (
-          <g key={`zone-${zone.id}`}>
-            <ellipse
-              cx={zone.centroidX}
-              cy={zone.centroidY}
-              rx={zone.radiusX}
-              ry={zone.radiusY}
-              fill="var(--ground-soft)"
-              opacity={0.5}
-              filter="url(#zone-blur)"
-            />
-            <text
-              x={zone.centroidX}
-              y={zone.centroidY - zone.radiusY + 14}
-              textAnchor="middle"
-              fill="var(--chalk-faint)"
-              fontSize={11}
-              fontFamily="var(--font-voice)"
-            >
-              {zone.name}
-            </text>
-          </g>
-        ))}
+        {zones.map((zone) => {
+          const ownership = zoneOwnership.get(zone.id) ?? 0;
+          return (
+            <g key={`zone-${zone.id}`}>
+              <ellipse
+                cx={zone.centroidX}
+                cy={zone.centroidY}
+                rx={zone.radiusX}
+                ry={zone.radiusY}
+                fill="var(--ground-soft)"
+                opacity={computeZoneOpacity(ownership)}
+                filter="url(#zone-blur)"
+              />
+              <text
+                x={zone.centroidX}
+                y={zone.centroidY - zone.radiusY + 14}
+                textAnchor="middle"
+                fill={computeZoneLabelColor(ownership)}
+                fontSize={11}
+                fontFamily="var(--font-voice)"
+              >
+                {zone.name}
+              </text>
+            </g>
+          );
+        })}
 
         {/* Goal path */}
         {goalPath && (
@@ -234,6 +264,7 @@ export default function VisualMap({
             x={node.x}
             y={node.y}
             trustLevel={node.trustLevel}
+            decayedConfidence={decayedConfidenceMap.get(node.id)}
             isActive={node.id === activeConcept}
             onClick={onConceptClick}
           />

@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import TopBar from './TopBar';
-import type { AppState } from './TopBar';
 import ConversationPanel from './ConversationPanel';
 import MapView from './MapView';
 import Drawer from './Drawer';
@@ -16,7 +15,7 @@ export interface DrawerState {
 }
 
 export default function AppShell() {
-  const [appState, setAppState] = useState<AppState>('conversation');
+  const [selectedConcept, setSelectedConcept] = useState<string | null>(null);
   const [sessionStart] = useState(() => Date.now());
   const [drawer, setDrawer] = useState<DrawerState | null>(null);
 
@@ -29,10 +28,6 @@ export default function AppShell() {
     }
   }, [session.initialized, session.initSession]);
 
-  const toggleState = useCallback(() => {
-    setAppState((s) => (s === 'conversation' ? 'map' : 'conversation'));
-  }, []);
-
   const openCalibrationDrawer = useCallback(() => {
     setDrawer({ type: 'calibration' });
   }, []);
@@ -42,17 +37,24 @@ export default function AppShell() {
   }, []);
 
   const handleConceptClick = useCallback((conceptId: string) => {
-    setDrawer({ type: 'concept', conceptId });
+    setSelectedConcept(conceptId);
+    session.focusConcept(conceptId);
+  }, [session.focusConcept]);
+
+  const handleCloseConversation = useCallback(() => {
+    setSelectedConcept(null);
   }, []);
 
   // Keyboard shortcuts.
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
-      const mod = e.metaKey || e.ctrlKey;
-      if (mod && e.key === 'm') {
+      if (e.key === 'Escape') {
         e.preventDefault();
-        toggleState();
+        if (selectedConcept) {
+          setSelectedConcept(null);
+        }
       }
+      const mod = e.metaKey || e.ctrlKey;
       if (mod && e.key === '.') {
         e.preventDefault();
         if (drawer?.type === 'concept') {
@@ -62,7 +64,7 @@ export default function AppShell() {
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [toggleState, closeDrawer, drawer]);
+  }, [closeDrawer, drawer, selectedConcept]);
 
   // Build concept detail for drawer.
   const drawerConceptDetail = drawer?.type === 'concept' && drawer.conceptId
@@ -82,19 +84,34 @@ export default function AppShell() {
       session.calibration.overclaimed.length +
       session.calibration.underclaimed.length) > 0;
 
+  // Find focused concept name for top bar.
+  const focusedConceptName = selectedConcept
+    ? session.concepts.find((c) => c.id === selectedConcept)?.name ?? null
+    : null;
+
+  const isSplit = selectedConcept !== null;
+
   return (
     <div className="app-shell">
       <TopBar
-        appState={appState}
-        onToggleState={toggleState}
         onCalibrationClick={openCalibrationDrawer}
         sessionStart={sessionStart}
         hasCalibrationData={hasCalibrationData}
+        focusedConcept={focusedConceptName}
       />
 
-      <div className="app-main">
-        {appState === 'conversation' ? (
-          <div className="conversation-state">
+      <div className={`app-main ${isSplit ? 'app-main--split' : 'app-main--map-full'}`}>
+        <div className={isSplit ? 'app-main__map' : undefined}>
+          <MapView
+            concepts={session.concepts}
+            edges={session.edges}
+            territories={session.territories}
+            activeConcept={selectedConcept}
+            onConceptClick={handleConceptClick}
+          />
+        </div>
+        {isSplit && (
+          <div className="app-main__conversation">
             <ConversationPanel
               messages={session.messages}
               trustUpdates={session.trustUpdates}
@@ -107,13 +124,11 @@ export default function AppShell() {
               onSandboxClose={session.closeSandbox}
             />
           </div>
-        ) : (
-          <MapView
-            concepts={session.concepts}
-            edges={session.edges}
-            territories={session.territories}
-            onConceptClick={handleConceptClick}
-          />
+        )}
+        {!isSplit && session.concepts.length > 0 && (
+          <div className="map-hint font-system">
+            Click any concept to begin.
+          </div>
         )}
       </div>
 

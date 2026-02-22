@@ -451,6 +451,26 @@ describe('conversation loop', () => {
     expect(loop.isSandboxActive()).toBe(true);
   });
 
+  it('focusConcept returns contextual opening and pushes to history', async () => {
+    const llm = createMockLLM([
+      // focusConcept's generateAgentResponse
+      'TCP retransmission handles lost packets. What do you already know about how TCP detects loss?',
+    ]);
+
+    const loop = createConversationLoop({
+      store,
+      llm,
+      personId: PERSON_ID,
+      conceptIds: CONCEPTS.map(c => c.id),
+    });
+
+    const result = await loop.focusConcept('tcp-basics');
+    expect(result.agentResponse).toContain('TCP');
+    expect(result.trustUpdates).toHaveLength(0);
+    expect(loop.getHistory()).toHaveLength(1);
+    expect(loop.getHistory()[0].role).toBe('agent');
+  });
+
   it('appends agent transition suggestion to response', async () => {
     const llm = createMockLLM([
       // 1. explain request

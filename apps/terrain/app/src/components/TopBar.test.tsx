@@ -4,8 +4,6 @@ import TopBar from './TopBar';
 
 describe('TopBar', () => {
   const defaultProps = {
-    appState: 'conversation' as const,
-    onToggleState: vi.fn(),
     onCalibrationClick: vi.fn(),
     sessionStart: Date.now(),
   };
@@ -15,21 +13,10 @@ describe('TopBar', () => {
     expect(screen.getByText('terrain')).toBeInTheDocument();
   });
 
-  it('shows map toggle in conversation state', () => {
+  it('does not render toggle button', () => {
     render(<TopBar {...defaultProps} />);
-    expect(screen.getByText('map')).toBeInTheDocument();
-  });
-
-  it('shows conversation toggle in map state', () => {
-    render(<TopBar {...defaultProps} appState="map" />);
-    expect(screen.getByText('← conversation')).toBeInTheDocument();
-  });
-
-  it('calls onToggleState when toggle clicked', () => {
-    const onToggle = vi.fn();
-    render(<TopBar {...defaultProps} onToggleState={onToggle} />);
-    fireEvent.click(screen.getByText('map'));
-    expect(onToggle).toHaveBeenCalledOnce();
+    expect(screen.queryByText('map')).not.toBeInTheDocument();
+    expect(screen.queryByText('← conversation')).not.toBeInTheDocument();
   });
 
   it('renders session timer', () => {
@@ -54,5 +41,16 @@ describe('TopBar', () => {
     );
     fireEvent.click(screen.getByLabelText('Open calibration'));
     expect(onCalibration).toHaveBeenCalledOnce();
+  });
+
+  it('shows focused concept name when provided', () => {
+    render(<TopBar {...defaultProps} focusedConcept="TCP Basics" />);
+    expect(screen.getByText('TCP Basics')).toBeInTheDocument();
+  });
+
+  it('does not show focused concept when null', () => {
+    render(<TopBar {...defaultProps} focusedConcept={null} />);
+    // No extra text elements besides terrain and timer
+    expect(screen.queryByText('TCP Basics')).not.toBeInTheDocument();
   });
 });

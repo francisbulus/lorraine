@@ -50,53 +50,36 @@ export default function ConversationPanel({
 
   // Track whether user is near the bottom
   const handleScroll = useCallback(() => {
-    const scrollContainer = mainRef.current?.parentElement;
+    const scrollContainer = mainRef.current;
     if (!scrollContainer) return;
     const isAtBottom = scrollContainer.scrollHeight - scrollContainer.scrollTop - scrollContainer.clientHeight < 40;
     setAutoScroll(isAtBottom);
   }, []);
 
-  // Attach scroll listener to .conversation-state (parent of <main>)
+  // Attach scroll listener to main element
   useEffect(() => {
-    const scrollContainer = mainRef.current?.parentElement;
+    const scrollContainer = mainRef.current;
     if (!scrollContainer) return;
     scrollContainer.addEventListener('scroll', handleScroll);
     return () => scrollContainer.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  if (!hasMessages) {
-    return (
-      <main ref={mainRef} className="conversation-panel conversation-panel--empty" aria-label="Conversation">
-        <div className="conversation-panel__empty">
-          <h1 className="conversation-panel__prompt font-voice">
-            What do you want to learn?
-          </h1>
-          <input
-            type="text"
-            className="conversation-panel__input font-hand"
-            autoFocus
-            aria-label="Your message"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const value = (e.target as HTMLInputElement).value.trim();
-                if (value) {
-                  onSubmit(value);
-                  (e.target as HTMLInputElement).value = '';
-                }
-              }
-            }}
-          />
-        </div>
-      </main>
-    );
-  }
-
   return (
     <main ref={mainRef} className="conversation-panel" aria-label="Conversation">
-      <Conversation
-        messages={messages}
-        trustUpdates={trustUpdates}
-      />
+      {hasMessages ? (
+        <Conversation
+          messages={messages}
+          trustUpdates={trustUpdates}
+        />
+      ) : (
+        <div className="conversation-panel__ready">
+          {loading && (
+            <div className="conversation-panel__loading font-data">
+              thinking...
+            </div>
+          )}
+        </div>
+      )}
       {sandboxActive && sandboxConceptId && onSandboxRun && (
         <div className="conversation__sandbox-inline">
           <Sandbox
@@ -106,7 +89,7 @@ export default function ConversationPanel({
           />
         </div>
       )}
-      {loading && (
+      {hasMessages && loading && (
         <div className="conversation-panel__loading font-data">
           thinking...
         </div>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import ConversationPanel from './ConversationPanel';
 
 describe('ConversationPanel', () => {
@@ -11,26 +11,15 @@ describe('ConversationPanel', () => {
     error: null,
   };
 
-  it('shows empty state when no messages', () => {
+  it('shows minimal ready state when no messages', () => {
     render(<ConversationPanel {...defaultProps} />);
-    expect(screen.getByText('What do you want to learn?')).toBeInTheDocument();
+    expect(screen.queryByText('What do you want to learn?')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Conversation')).toBeInTheDocument();
   });
 
-  it('calls onSubmit when Enter is pressed in empty state input', () => {
-    const onSubmit = vi.fn();
-    render(<ConversationPanel {...defaultProps} onSubmit={onSubmit} />);
-    const input = screen.getByLabelText('Your message');
-    fireEvent.change(input, { target: { value: 'What is TCP?' } });
-    fireEvent.keyDown(input, { key: 'Enter' });
-    expect(onSubmit).toHaveBeenCalledWith('What is TCP?');
-  });
-
-  it('does not submit empty input', () => {
-    const onSubmit = vi.fn();
-    render(<ConversationPanel {...defaultProps} onSubmit={onSubmit} />);
-    const input = screen.getByLabelText('Your message');
-    fireEvent.keyDown(input, { key: 'Enter' });
-    expect(onSubmit).not.toHaveBeenCalled();
+  it('shows input even with no messages', () => {
+    render(<ConversationPanel {...defaultProps} />);
+    expect(screen.getByLabelText('Your message')).toBeInTheDocument();
   });
 
   it('renders conversation when messages exist', () => {
@@ -45,10 +34,9 @@ describe('ConversationPanel', () => {
     );
     expect(screen.getByText('What is TCP?')).toBeInTheDocument();
     expect(screen.getByText('TCP is a transport protocol.')).toBeInTheDocument();
-    expect(screen.queryByText('What do you want to learn?')).not.toBeInTheDocument();
   });
 
-  it('shows loading indicator when loading', () => {
+  it('shows loading indicator when loading with messages', () => {
     render(
       <ConversationPanel
         {...defaultProps}
@@ -56,6 +44,11 @@ describe('ConversationPanel', () => {
         loading={true}
       />
     );
+    expect(screen.getByText('thinking...')).toBeInTheDocument();
+  });
+
+  it('shows loading indicator in ready state when loading', () => {
+    render(<ConversationPanel {...defaultProps} loading={true} />);
     expect(screen.getByText('thinking...')).toBeInTheDocument();
   });
 
@@ -68,13 +61,6 @@ describe('ConversationPanel', () => {
       />
     );
     expect(screen.getByText('API key missing')).toBeInTheDocument();
-  });
-
-  it('does not show loading in empty state', () => {
-    render(<ConversationPanel {...defaultProps} loading={true} />);
-    // Empty state renders, not the conversation + loading
-    expect(screen.getByText('What do you want to learn?')).toBeInTheDocument();
-    expect(screen.queryByText('thinking...')).not.toBeInTheDocument();
   });
 
   it('renders sandbox inline when sandboxActive is true', () => {
@@ -112,7 +98,6 @@ describe('ConversationPanel', () => {
         ]}
       />
     );
-    // Input should be present alongside messages (inline, not in empty state)
     expect(screen.getByText('What is TCP?')).toBeInTheDocument();
     expect(screen.getByLabelText('Your message')).toBeInTheDocument();
   });
