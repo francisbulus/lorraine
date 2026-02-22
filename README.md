@@ -45,6 +45,24 @@ These hold in every context. Non-negotiable.
 5. **Never manipulates verification to inflate trust** — no leading questions, no score-boosting
 6. **Trust state is derived, not stored** — recomputable from events, no manual overrides, corrections via retraction
 
+## How it fits
+
+```
+Your application          — UI, business logic, context
+Your service layer        — how verification happens (LLM, human interviewer,
+                            CI/CD pipeline, exam system, whatever)
+Your database             — Postgres, SQLite, DynamoDB, whatever
+──────────────────────────────────────────────────────────────
+Lorraine SDK              — schema + computation + query
+                            the opinions that make trust honest
+```
+
+Lorraine is the line in the middle. Everything above it is yours. You bring your own database, your own verification method, your own application. Lorraine gives you the guarantee that whatever trust data flows through the system is epistemically honest.
+
+The SDK doesn't care how you verify. It cares that when you record a verification event, you include the modality, the result, and the context. It doesn't care where you store it. It cares that the store implements the interface. It doesn't care what your app does with trust state. It cares that trust state is derived from events through the computation rules, not manually set.
+
+The TypeScript implementation in `engine/` is the first SDK. The framework is language-agnostic — the spec defines the schema, invariants, computation rules, and query semantics. Any implementation that follows the spec produces compatible trust data.
+
 ## What you build on top
 
 The four layers are self-sufficient. You can use Lorraine without an LLM, without a UI, without an application. Pipe in structured events from a CI/CD pipeline and query trust state from a script.
