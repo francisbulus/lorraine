@@ -2,7 +2,7 @@
 
 ## Current Task
 
-005 — Conversation Loop (Backend)
+006 — Grill Mode
 
 ## Quick Status
 
@@ -22,7 +22,7 @@
 | 002 | Networking Domain Package | Done |
 | 003 | App Shell & Layout | Done |
 | 004 | Conversation UI | Done |
-| 005 | Conversation Loop (Backend) | Pending |
+| 005 | Conversation Loop (Backend) | Done |
 | 006 | Grill Mode | Pending |
 | 007 | Territory List View (MVP Map) | Pending |
 | 008 | Margin Panel | Pending |
@@ -48,7 +48,7 @@
 
 ## Last Session
 
-004 completed. Two-voice conversation UI with serif/mono typography, trust annotations, auto-scroll, input with submit behavior.
+005 completed. Full conversation loop: signal extraction + write policy + deduplication + claim capture + LLM agent response. 70 terrain tests, 79 engine tests, zero regressions.
 
 ## Blockers
 
@@ -56,4 +56,4 @@ None.
 
 ## Next Steps
 
-Start 005 — Conversation loop backend.
+Start 006 — Grill mode.
