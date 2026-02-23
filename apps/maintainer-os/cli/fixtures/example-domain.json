@@ -1,0 +1,47 @@
+{
+  "id": "payments-core",
+  "name": "Payments Core",
+  "description": "Core concepts for the payments codebase",
+  "version": "0.1",
+  "concepts": [
+    { "id": "auth-boundaries", "name": "Auth Boundaries", "description": "Authentication and authorization boundaries in the payments service" },
+    { "id": "migration-safety", "name": "Migration Safety", "description": "Safe database migration practices including rollback plans and data validation" },
+    { "id": "rollback-strategy", "name": "Rollback Strategy", "description": "Deployment rollback procedures and decision criteria" },
+    { "id": "incident-triage", "name": "Incident Triage", "description": "Initial incident assessment, severity classification, and escalation" },
+    { "id": "log-analysis", "name": "Log Analysis", "description": "Querying and interpreting service logs for debugging and incident response" },
+    { "id": "cache-coherency", "name": "Cache Coherency", "description": "Cache invalidation patterns and consistency guarantees" },
+    { "id": "event-bus-semantics", "name": "Event Bus Semantics", "description": "Message ordering, delivery guarantees, and consumer group behavior" },
+    { "id": "rate-limiting", "name": "Rate Limiting", "description": "Rate limit configuration, monitoring, and bypass procedures" }
+  ],
+  "edges": [
+    { "from": "log-analysis", "to": "incident-triage", "type": "prerequisite", "inferenceStrength": 0.6 },
+    { "from": "rollback-strategy", "to": "migration-safety", "type": "related_to", "inferenceStrength": 0.5 },
+    { "from": "cache-coherency", "to": "event-bus-semantics", "type": "prerequisite", "inferenceStrength": 0.4 },
+    { "from": "auth-boundaries", "to": "rate-limiting", "type": "related_to", "inferenceStrength": 0.3 }
+  ],
+  "mappings": {
+    "auth-boundaries": { "paths": ["src/auth/**", "config/permissions.yaml"] },
+    "migration-safety": { "paths": ["db/migrations/**", "scripts/migrate.*"] },
+    "rollback-strategy": { "paths": ["deploy/**", "scripts/rollback.*"] },
+    "cache-coherency": { "paths": ["src/cache/**"] },
+    "event-bus-semantics": { "paths": ["src/events/**", "src/consumers/**"] },
+    "rate-limiting": { "paths": ["src/middleware/rate-limit.*", "config/rate-limits.yaml"] }
+  },
+  "bundles": {
+    "release-captain": {
+      "required": [
+        { "concept": "migration-safety", "minLevel": "verified" },
+        { "concept": "rollback-strategy", "minLevel": "verified" },
+        { "concept": "incident-triage", "minLevel": "verified" },
+        { "concept": "event-bus-semantics", "minLevel": "inferred", "minConfidence": 0.6 }
+      ]
+    },
+    "primary-oncall": {
+      "required": [
+        { "concept": "incident-triage", "minLevel": "verified" },
+        { "concept": "log-analysis", "minLevel": "verified" },
+        { "concept": "rollback-strategy", "minLevel": "inferred", "minConfidence": 0.5 }
+      ]
+    }
+  }
+}
