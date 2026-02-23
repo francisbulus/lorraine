@@ -30,6 +30,9 @@ export function calibrate(
       surpriseRate: 0,
       claimCalibration: 0,
       recommendation: 'No trust data available. Begin verification to build a model.',
+      predictionCount: 0,
+      claimCount: 0,
+      staleFromInferred: 0,
     };
   }
 
@@ -43,6 +46,7 @@ export function calibrate(
   let overconfidenceCount = 0;
   let underconfidenceCount = 0;
   let staleCount = 0;
+  let staleFromInferred = 0;
 
   for (const state of allStates) {
     const history = store.getVerificationHistory(input.personId, state.conceptId);
@@ -55,6 +59,7 @@ export function calibrate(
       }
     } else if (state.level === 'inferred') {
       staleCount++;
+      staleFromInferred++;
     }
 
     if (history.length >= 2) {
@@ -127,6 +132,8 @@ export function calibrate(
     recommendation = 'High surprise rate. Model predictions frequently differ from outcomes. More evidence needed.';
   } else if (claimCalibration < 0.5 && claimCount > 0) {
     recommendation = 'Self-assessment poorly calibrated with evidence. Focus on claim-evidence alignment.';
+  } else if (predictions === 0) {
+    recommendation = 'Insufficient data for calibration. Need concepts with 2+ verification events to measure prediction accuracy.';
   } else {
     recommendation = 'Model is performing within acceptable parameters. Continue regular verification.';
   }
@@ -139,5 +146,8 @@ export function calibrate(
     surpriseRate,
     claimCalibration,
     recommendation,
+    predictionCount: predictions,
+    claimCount,
+    staleFromInferred,
   };
 }

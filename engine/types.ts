@@ -177,6 +177,9 @@ export interface CalibrateResult {
   surpriseRate: number;
   claimCalibration: number;
   recommendation: string;
+  predictionCount: number;
+  claimCount: number;
+  staleFromInferred: number;
 }
 
 export interface ExplainDecisionInput {

@@ -33,35 +33,47 @@ function printCalibration(person: string, result: CalibrateResult): void {
   console.log(`${chalk.bold('Calibration:')} ${person}`);
   console.log('');
 
+  const hasPredictions = result.predictionCount > 0;
+  const hasClaims = result.claimCount > 0;
+
   printMetric(
     'Prediction accuracy',
-    `${Math.round(result.predictionAccuracy * 100)}%`,
-    'How often the model correctly predicted verification outcomes',
+    hasPredictions ? `${Math.round(result.predictionAccuracy * 100)}%` : chalk.dim('no data'),
+    hasPredictions
+      ? 'How often the model correctly predicted verification outcomes'
+      : 'Needs concepts with 2+ verification events',
   );
   printMetric(
     'Overconfidence bias',
-    formatConfidence(result.overconfidenceBias),
+    hasPredictions ? formatConfidence(result.overconfidenceBias) : chalk.dim('no data'),
     'Average magnitude of unexpectedly poor outcomes',
   );
   printMetric(
     'Underconfidence bias',
-    formatConfidence(result.underconfidenceBias),
+    hasPredictions ? formatConfidence(result.underconfidenceBias) : chalk.dim('no data'),
     'Average magnitude of unexpectedly strong outcomes',
   );
+
+  const staleDesc = result.staleFromInferred > 0
+    ? `Concepts not verified in the last 60 days (includes ${result.staleFromInferred} inferred, never directly verified)`
+    : 'Concepts not verified in the last 60 days';
   printMetric(
     'Stale percentage',
     `${Math.round(result.stalePercentage * 100)}%`,
-    'Concepts not verified in the last 60 days',
+    staleDesc,
   );
+
   printMetric(
     'Surprise rate',
-    `${Math.round(result.surpriseRate * 100)}%`,
+    hasPredictions ? `${Math.round(result.surpriseRate * 100)}%` : chalk.dim('no data'),
     'Verification outcomes that contradicted expectations',
   );
   printMetric(
     'Claim calibration',
-    formatConfidence(result.claimCalibration),
-    'How well self-assessments match evidence (1.0 = perfect)',
+    hasClaims ? formatConfidence(result.claimCalibration) : chalk.dim('no data'),
+    hasClaims
+      ? 'How well self-assessments match evidence (1.0 = perfect)'
+      : 'No self-assessment claims recorded',
   );
 
   console.log('');
