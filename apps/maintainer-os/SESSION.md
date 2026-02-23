@@ -1,33 +1,35 @@
-# MaintainerOS — Session Tracking
+# MaintainerOS: Session Tracking
 
 ## Current Task
 
-001 — Project Setup + CLI Skeleton (Phase 1)
+Phase 1 complete. Next: 011 (Phase 2).
 
 ## Quick Status
 
 | Item | Status |
 |------|--------|
 | Spec | Done (v0.2) |
-| Product spec | Pending |
-| Tech spec | Pending |
+| Product spec | Done |
+| Tech spec | Done |
+| CLI spec | Done |
 | Tasks | Done (24 tasks: 001-024) |
-| Build | Not started |
+| Phase 1 | Done (43 tests, full E2E) |
+| Phase 2 | Not started |
 
 ## Task Progress
 
 | # | Task | Phase | Status |
 |---|------|-------|--------|
-| 001 | Project Setup + CLI Skeleton | 1 | Pending |
-| 002 | Init + Config Management | 1 | Pending |
-| 003 | Store Adapter + Domain Loading | 1 | Pending |
-| 004 | Manual Event Ingest | 1 | Pending |
-| 005 | Trust Status Display | 1 | Pending |
-| 006 | Role Gates + Readiness Evaluation | 1 | Pending |
-| 007 | Decision Explanation | 1 | Pending |
-| 008 | Calibration Display | 1 | Pending |
-| 009 | Retraction Command | 1 | Pending |
-| 010 | Output Formatting + Exit Codes | 1 | Pending |
+| 001 | Project Setup + CLI Skeleton | 1 | Done |
+| 002 | Init + Config Management | 1 | Done |
+| 003 | Store Adapter + Domain Loading | 1 | Done |
+| 004 | Manual Event Ingest | 1 | Done |
+| 005 | Trust Status Display | 1 | Done |
+| 006 | Role Gates + Readiness Evaluation | 1 | Done |
+| 007 | Decision Explanation | 1 | Done |
+| 008 | Calibration Display | 1 | Done |
+| 009 | Retraction Command | 1 | Done |
+| 010 | Output Formatting + Exit Codes | 1 | Done |
 | 011 | Concept-to-File Mapper | 2 | Pending |
 | 012 | GitHub Ingest Adapter | 2 | Pending |
 | 013 | Reviewer Recommendation | 2 | Pending |
@@ -45,14 +47,25 @@
 
 ## Phases
 
-- **Phase 1 (001-010):** Local Pilot. init, domain load, manual ingest, status, ready, why, calibrate, retract, output formatting. SQLite store, no LLM required. Exit criteria: 1 repo modeled, 1 role gate evaluated end to end.
-- **Phase 2 (011-015):** External Ingest + Reviewer Recs. Concept-to-file mapping, GitHub ingest, reviewer recommendation, decay scan, policy files. No LLM required. Exit criteria: reviewer recs with explain traces, stale/contested alerts daily.
-- **Phase 3 (016-019):** Probe Loop + LLM Services. LLM worker, challenge workflow, probe scheduler, notifier. Exit criteria: scheduled probes with recorded evidence, calibration reports.
-- **Phase 4 (020-024):** Incident Integration + Governance. Incident ingest, retraction governance, permissioned views, daemon mode, observability. Exit criteria: on-call readiness decisions fully explainable from evidence.
+- **Phase 1 (001-010):** Done. Local Pilot. All commands working: init, domain load, ingest, status, ready, why, calibrate, retract, reviewers. 43 tests including full E2E loop.
+- **Phase 2 (011-015):** External Ingest + Reviewer Recs. Concept-to-file mapping, GitHub ingest, reviewer recommendation, decay scan, policy files. No LLM required.
+- **Phase 3 (016-019):** Probe Loop + LLM Services. LLM worker, challenge workflow, probe scheduler, notifier.
+- **Phase 4 (020-024):** Incident Integration + Governance. Incident ingest, retraction governance, permissioned views, daemon mode, observability.
 
 ## Last Session
 
-Created application structure, SPEC.md, docs skeleton, and 24 task files across 4 phases.
+Implemented all 10 Phase 1 tasks:
+- Project setup with Commander.js, vitest, engine barrel
+- Config management (TOML)
+- SQLite store adapter, domain loading with validation
+- Event ingest from JSON/CSV with propagation
+- Trust status display grouped by level
+- Role gate evaluation with exit codes
+- Decision explanation with evidence chains
+- Calibration metrics display
+- Event retraction with audit trail
+- Reviewer scoring and recommendation
+- Full E2E test covering the entire local pilot loop
 
 ## Blockers
 
@@ -60,4 +73,4 @@ None.
 
 ## Next Steps
 
-Start 001: Project Setup + CLI Skeleton.
+Start Phase 2: task 011 (Concept-to-File Mapper).
