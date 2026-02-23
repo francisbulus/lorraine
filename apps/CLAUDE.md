@@ -62,9 +62,13 @@ apps/<app>/
 
 ## Design Systems
 
-Web UI applications have a `docs/design-system.md` file. **Before implementing any visual changes for a web app, read its design system fully.** These are app-specific design systems that must be followed exactly — colors, typography, layout, animation, and anti-patterns are all defined there. Do not deviate.
+Web UI applications have a `docs/design-system.md` file. **Before implementing any visual changes for a web app, read its design system fully.** These are app-specific design systems that must be followed exactly: colors, typography, layout, animation, and anti-patterns are all defined there. Do not deviate.
 
 Applications that are not web UIs (CLIs, SDKs, APIs) will not have a design system file.
+
+## CLI Specifications
+
+CLI applications have a `docs/specs/cli.md` file. **Before implementing any CLI command, read the CLI spec fully.** It defines UX principles, output formatting conventions, color usage, exit codes, error message style, and example output layouts. These are the equivalent of a design system for terminal interfaces.
 
 ## Applications
 
