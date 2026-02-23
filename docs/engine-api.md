@@ -1,19 +1,19 @@
-# Lorraine — Engine API
+# Lorraine: Engine API
 
-**Version:** 0.3 (Draft)<br>
-**Last Updated:** February 22, 2026<br>
-**Implements:** foundational.md v0.4<br>
-**Architecture:** Engine Core (deterministic, no LLM) + Engine Services (LLM-powered)
+**Version:** 0.4 (Draft)<br>
+**Last Updated:** February 23, 2026<br>
+**Implements:** foundational.md v0.5<br>
+**Scope:** This documents the reference implementation: the TypeScript engine in `engine/`. It is the API for the code that implements the four framework layers (schema, data, computation, query).
 
 ---
 
 ## 0. Architecture
 
-The engine has two layers:
+The engine implements the framework in two parts:
 
-**Engine Core** — pure trust machine. Deterministic. No LLM dependency. Can run fully encrypted client-side. Accepts events, computes trust state, propagates, decays, calibrates, explains.
+**Engine Core**: the four framework layers. Pure trust machine. Deterministic. No LLM dependency. Can run fully encrypted client-side. Accepts events, computes trust state, propagates, decays, calibrates, explains.
 
-**Engine Services** — LLM-powered adapters. Generate verification prompts, interpret responses, extract implicit signals. Vary by application context. Sit between core and applications.
+**Engine Services**: LLM-powered adapters built on top of the core. Generate verification prompts, interpret responses, extract implicit signals. Vary by application context. Optional. The core works without them.
 
 This split means:
 - Core can run without any LLM (for external event ingestion, batch processing, encrypted contexts)
@@ -27,12 +27,13 @@ If an API doesn't serve at least one engine invariant or human experience defaul
 
 ### Engine Vocabulary
 
-Five primitives:
-- **Concept** — a node in the graph
-- **Edge** — a connection between nodes
-- **Verification event** — a moment where understanding was observed
-- **Claim event** — a person's self-reported belief about their understanding
-- **Trust state** — per concept, per person, derived from events + decay + propagation (not a primary store)
+Six primitives:
+- **Concept**: a node in the graph
+- **Edge**: a connection between nodes
+- **Verification event**: a moment where understanding was observed
+- **Claim event**: a person's self-reported belief about their understanding
+- **Trust state**: per concept, per person, derived from events + decay + propagation (not a primary store)
+- **Retraction event**: a correction to a previous event, preserving audit integrity
 
 ---
 
@@ -63,10 +64,10 @@ recordVerification({
 ```
 
 **What it does:**
-Records a single verification event — one moment where a person's understanding was observed. This is the atomic evidence write. Every question answered, every experiment run, every concept used naturally in reasoning, every real-world action observed by an external system — each one produces a call to this API.
+Records a single verification event: one moment where a person's understanding was observed. This is the atomic evidence write. Every question answered, every experiment run, every concept used naturally in reasoning, every real-world action observed by an external system. Each one produces a call to this API.
 
 **Why it exists:**
-Without verification events, trust has no evidence (Invariant 1). The context field ensures every trust claim has provenance — you can always trace backward and ask "why does the system believe this person knows this?" (Invariant 3). The modality field enables cross-modality analysis (Propagation Rule 4).
+Without verification events, trust has no evidence (Invariant 1). The context field ensures every trust claim has provenance: you can always trace backward and ask "why does the system believe this person knows this?" (Invariant 3). The modality field enables cross-modality analysis (Propagation Rule 4).
 
 **What it does NOT do:**
 It does not decide what to verify next. It does not interpret responses. It records structured events. The services layer handles generation and interpretation.
@@ -126,13 +127,13 @@ retractEvent({
 ```
 
 **What it does:**
-Marks an event as retracted and recomputes all affected trust state. The retraction is itself a logged event. The original event is never deleted — it is marked as retracted with the reason preserved. The audit trail remains complete.
+Marks an event as retracted and recomputes all affected trust state. The retraction is itself a logged event. The original event is never deleted. It is marked as retracted with the reason preserved. The audit trail remains complete.
 
 **Why it exists:**
-Invariant 6 says trust state is derived from events with no direct state edits. But events themselves may need correction — fraudulent verification, duplicated submissions, identity mixups, GDPR/consent erasure requests. `retractEvent` is the correction mechanism that preserves the invariant: you don't edit state, you edit the event log, and state recomputes.
+Invariant 6 says trust state is derived from events with no direct state edits. But events themselves may need correction: fraudulent verification, duplicated submissions, identity mixups, GDPR/consent erasure requests. `retractEvent` is the correction mechanism that preserves the invariant: you don't edit state, you edit the event log, and state recomputes.
 
 **What it does NOT do:**
-It does not allow inflating trust. Retracting a failure event would recompute trust upward — but the retraction reason is logged, the retractor is logged, and the audit trail shows exactly what happened. Abuse is visible.
+It does not allow inflating trust. Retracting a failure event would recompute trust upward, but the retraction reason is logged, the retractor is logged, and the audit trail shows exactly what happened. Abuse is visible.
 
 ---
 
@@ -160,7 +161,7 @@ getTrustState({
 Reads the full derived trust state for a single concept for a single person. This is the atomic read operation. Applications call this constantly.
 
 **Why it exists:**
-Any system built on the engine needs to know what a person knows (Invariant 1). The person needs to be able to see what the system believes about them (Invariant 3). The distinction between `level` and `confidence` matters: a concept can be `inferred` at 0.8 confidence — "fairly sure, but never directly demonstrated."
+Any system built on the engine needs to know what a person knows (Invariant 1). The person needs to be able to see what the system believes about them (Invariant 3). The distinction between `level` and `confidence` matters: a concept can be `inferred` at 0.8 confidence: "fairly sure, but never directly demonstrated."
 
 **Critical design decisions:**
 - `inferredFrom` is exposed, not hidden. Provenance is always traceable (Invariant 3).
@@ -203,7 +204,7 @@ propagateTrust({
 **What it does:**
 When a verification event occurs on one concept, this computes the ripple effects across the graph. Each affected concept gets an updated derived state, and the reason for the update is recorded.
 
-**The propagation rules (hardcoded — Invariant 2):**
+**The propagation rules (hardcoded, Invariant 2):**
 
 1. Verification never propagates as verification. Only as inference.
 2. Inference attenuates with distance.
@@ -239,7 +240,7 @@ Exponential decay (Ebbinghaus curve), with two modifiers:
 
 ## 2. Core: Graph APIs
 
-These manage the concept graph — the structure of knowledge independent of any person's trust state.
+These manage the concept graph: the structure of knowledge independent of any person's trust state.
 
 ### 2.1 loadConcepts
 
@@ -318,7 +319,7 @@ calibrate({
 **What it does:**
 The engine audits its own model quality AND the person's self-calibration quality.
 
-`claimCalibration` is new: it measures how well the person's claims track their evidence-based trust state. This is the Lorraine Code metric — knowing well includes knowing what you don't know.
+`claimCalibration` is new: it measures how well the person's claims track their evidence-based trust state. This is the Lorraine Code metric: knowing well includes knowing what you don't know.
 
 ---
 
@@ -347,7 +348,7 @@ Makes the engine's reasoning transparent (Invariant 3). Any trust update, propag
 
 These are LLM-powered. They sit between the core and applications. They generate and interpret the human-facing interactions that produce verification events for the core.
 
-**These are not part of the engine core.** They can be swapped, specialized, or omitted entirely. An application that only receives external verification events (CI/CD pipeline integration) doesn't need services at all.
+**These are not part of the engine core.** They are built on top of the four framework layers. They can be swapped, specialized, or omitted entirely. An application that only receives external verification events (CI/CD pipeline, code review tool, exam system) doesn't need services at all.
 
 ### 4.1 generateVerification
 
@@ -371,10 +372,10 @@ generateVerification({
 ```
 
 **What it does:**
-Generates a verification interaction. Reads trust state from the core to decide *what* to verify. Uses LLM to generate *how* — the actual prompt, calibrated to the person and the application context.
+Generates a verification interaction. Reads trust state from the core to decide *what* to verify. Uses LLM to generate *how*: the actual prompt, calibrated to the person and the application context.
 
 **Why `applicationContext` matters:**
-A learning OS generates conversational Socratic questions. A hiring service generates technical interview prompts. A certification service generates standardized assessments. Same engine, same trust math, different framing.
+A learning app generates conversational Socratic questions. A hiring service generates technical interview prompts. A certification service generates standardized assessments. Same engine, same trust math, different framing.
 
 ---
 
@@ -423,7 +424,7 @@ extractImplicitSignals({
 ```
 
 **What it does:**
-Mines natural interaction for trust signals. The richest verification comes from integrated use — concepts appearing naturally in reasoning without scaffolding.
+Mines natural interaction for trust signals. The richest verification comes from integrated use: concepts appearing naturally in reasoning without scaffolding.
 
 **Why `confidence` matters:**
 Implicit extraction is noisier than explicit testing. High-confidence signals get written to the core via `recordVerification`. Low-confidence signals are noted but don't drive trust updates.
@@ -445,11 +446,11 @@ requestSelfVerification({
 The person initiates verification. Routes through `generateVerification` with appropriate framing.
 
 **Why it exists:**
-Two-way verification. The person has private information — a gut feeling that something isn't solid, or knowledge gained outside the system. This lets them act on it.
+Two-way verification. The person has private information: a gut feeling that something isn't solid, or knowledge gained outside the system. This lets them act on it.
 
 ---
 
-## 5. Principle Coverage Matrix
+## 5. Invariant Coverage Matrix
 
 | Invariant / Default | Served by |
 |---------------------|-----------|
@@ -481,7 +482,7 @@ No orphaned invariants. No orphaned APIs.
 - UI rendering (application layer)
 - Gamification (deliberately absent everywhere)
 - Role-specific logic (application layer)
-- Manual trust state overrides (deliberately impossible — Invariant 6)
+- Manual trust state overrides (deliberately impossible, Invariant 6)
 
 ### Not in Services:
 - Domain graph content (data, loaded via core)
