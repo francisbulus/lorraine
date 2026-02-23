@@ -3,7 +3,13 @@ import chalk from 'chalk';
 import { calibrate } from '../engine.js';
 import type { CalibrateResult } from '../engine.js';
 import { getStore, closeStore } from '../lib/store.js';
-import { formatConfidence } from '../lib/formatters.js';
+import {
+  formatConfidence,
+  renderBar,
+  renderHeader,
+  renderSeparator,
+  BAR_WIDTH,
+} from '../lib/formatters.js';
 
 export function registerCalibrateCommand(program: Command): void {
   program
@@ -30,7 +36,8 @@ export function registerCalibrateCommand(program: Command): void {
 }
 
 function printCalibration(person: string, result: CalibrateResult): void {
-  console.log(`${chalk.bold('Calibration:')} ${person}`);
+  console.log(renderHeader('Calibration', person));
+  console.log(renderSeparator());
   console.log('');
 
   const hasPredictions = result.predictionCount > 0;
@@ -38,38 +45,46 @@ function printCalibration(person: string, result: CalibrateResult): void {
 
   printMetric(
     'Prediction accuracy',
+    hasPredictions ? result.predictionAccuracy : null,
     hasPredictions ? `${Math.round(result.predictionAccuracy * 100)}%` : chalk.dim('no data'),
     hasPredictions
       ? 'How often the model correctly predicted verification outcomes'
-      : 'Needs concepts with 2+ verification events',
+      : 'Needs 2+ verification events per concept',
+    chalk.green,
   );
   printMetric(
     'Overconfidence bias',
+    null,
     hasPredictions ? formatConfidence(result.overconfidenceBias) : chalk.dim('no data'),
     'Average magnitude of unexpectedly poor outcomes',
   );
   printMetric(
     'Underconfidence bias',
+    null,
     hasPredictions ? formatConfidence(result.underconfidenceBias) : chalk.dim('no data'),
     'Average magnitude of unexpectedly strong outcomes',
   );
 
   const staleDesc = result.staleFromInferred > 0
-    ? `Concepts not verified in the last 60 days (includes ${result.staleFromInferred} inferred, never directly verified)`
+    ? `${result.staleFromInferred} inferred concepts never directly verified`
     : 'Concepts not verified in the last 60 days';
   printMetric(
     'Stale percentage',
+    result.stalePercentage,
     `${Math.round(result.stalePercentage * 100)}%`,
     staleDesc,
+    chalk.red,
   );
 
   printMetric(
     'Surprise rate',
+    null,
     hasPredictions ? `${Math.round(result.surpriseRate * 100)}%` : chalk.dim('no data'),
     'Verification outcomes that contradicted expectations',
   );
   printMetric(
     'Claim calibration',
+    null,
     hasClaims ? formatConfidence(result.claimCalibration) : chalk.dim('no data'),
     hasClaims
       ? 'How well self-assessments match evidence (1.0 = perfect)'
@@ -77,12 +92,25 @@ function printCalibration(person: string, result: CalibrateResult): void {
   );
 
   console.log('');
-  console.log(chalk.bold('Recommendation:'));
-  console.log(`  ${result.recommendation}`);
+  console.log(renderSeparator());
+  console.log(`  ${chalk.bold('Recommendation:')}`);
+  console.log(`    ${result.recommendation}`);
 }
 
-function printMetric(name: string, value: string, description: string): void {
-  console.log(`  ${chalk.bold(name.padEnd(24))} ${value}`);
-  console.log(`  ${chalk.dim(description)}`);
+function printMetric(
+  name: string,
+  barValue: number | null,
+  displayValue: string,
+  description: string,
+  barColor?: chalk.ChalkInstance,
+): void {
+  if (barValue !== null) {
+    const color = barColor ?? chalk.yellow;
+    const bar = renderBar(barValue, BAR_WIDTH, color);
+    console.log(`  ${chalk.bold(name.padEnd(24))} ${bar} ${displayValue}`);
+  } else {
+    console.log(`  ${chalk.bold(name.padEnd(24))} ${displayValue}`);
+  }
+  console.log(`  ${' '.repeat(24)} ${chalk.dim(description)}`);
   console.log('');
 }

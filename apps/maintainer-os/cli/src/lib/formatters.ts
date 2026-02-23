@@ -1,6 +1,10 @@
 import chalk from 'chalk';
 import type { TrustLevel, TrustState, Modality } from '../engine.js';
 
+// Layout constants
+export const CONCEPT_COL = 24;
+export const BAR_WIDTH = 10;
+
 export function colorForLevel(level: TrustLevel): chalk.ChalkInstance {
   switch (level) {
     case 'verified': return chalk.green;
@@ -10,13 +14,45 @@ export function colorForLevel(level: TrustLevel): chalk.ChalkInstance {
   }
 }
 
+export function colorForLevelGradient(level: TrustLevel, decayedConfidence: number): chalk.ChalkInstance {
+  switch (level) {
+    case 'verified':
+      if (decayedConfidence > 0.7) return chalk.greenBright;
+      if (decayedConfidence >= 0.5) return chalk.green;
+      return chalk.green.dim;
+    case 'inferred':
+      if (decayedConfidence > 0.5) return chalk.yellowBright;
+      return chalk.yellow.dim;
+    case 'contested':
+      return chalk.redBright;
+    case 'untested':
+      return chalk.dim;
+  }
+}
+
 export function iconForLevel(level: TrustLevel): string {
   switch (level) {
     case 'verified': return chalk.green('✓');
     case 'inferred': return chalk.yellow('~');
-    case 'contested': return chalk.yellow('⚡');
+    case 'contested': return chalk.redBright('⚡');
     case 'untested': return chalk.dim('·');
   }
+}
+
+export function renderBar(value: number, width: number = BAR_WIDTH, colorFn?: chalk.ChalkInstance): string {
+  const clamped = Math.max(0, Math.min(1, value));
+  const filled = Math.round(clamped * width);
+  const empty = width - filled;
+  const color = colorFn ?? chalk.green;
+  return color('█'.repeat(filled)) + chalk.dim('░'.repeat(empty));
+}
+
+export function renderHeader(label: string, value: string): string {
+  return `  ${chalk.bold(label)} · ${value}`;
+}
+
+export function renderSeparator(width: number = 50): string {
+  return `  ${'─'.repeat(width)}`;
 }
 
 export function formatConfidence(confidence: number): string {
@@ -30,7 +66,9 @@ export function formatTimeAgo(timestamp: number | null): string {
   const days = Math.floor(diff / (1000 * 60 * 60 * 24));
   if (days === 0) return 'today';
   if (days === 1) return '1d ago';
-  return `${days}d ago`;
+  if (days < 14) return `${days}d ago`;
+  const weeks = Math.floor(days / 7);
+  return `${weeks}w ago`;
 }
 
 export function formatModalities(modalities: Modality[]): string {
@@ -81,7 +119,7 @@ export function formatStatusLine(state: TrustState): string {
   }
 }
 
-function summarizeConflict(state: TrustState): string {
+export function summarizeConflict(state: TrustState): string {
   const results = state.verificationHistory.map((v) => v.result);
   const unique = [...new Set(results)];
   return `${unique.join(' + ')} (conflicting evidence)`;

@@ -81,7 +81,7 @@ describe('Phase 1 local pilot loop', () => {
     // 9. Why
     const why = mos(['why', '--person', 'alice', '--concept', 'rollback-strategy']);
     expect(why.exitCode).toBe(0);
-    expect(why.stdout).toContain('Trust Explanation');
+    expect(why.stdout).toContain('Explanation');
     expect(why.stdout).toContain('rollback-strategy');
 
     // 10. Why JSON format

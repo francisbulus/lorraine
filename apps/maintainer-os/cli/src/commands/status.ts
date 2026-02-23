@@ -3,7 +3,20 @@ import chalk from 'chalk';
 import { getBulkTrustState } from '../engine.js';
 import type { TrustState } from '../engine.js';
 import { getStore, closeStore } from '../lib/store.js';
-import { groupByLevel, formatStatusLine, formatCalibrationSummary } from '../lib/formatters.js';
+import {
+  groupByLevel,
+  iconForLevel,
+  colorForLevelGradient,
+  renderBar,
+  renderHeader,
+  renderSeparator,
+  formatConfidence,
+  formatTimeAgo,
+  formatModalities,
+  summarizeConflict,
+  CONCEPT_COL,
+  BAR_WIDTH,
+} from '../lib/formatters.js';
 
 export function registerStatusCommand(program: Command): void {
   program
@@ -39,46 +52,70 @@ export function registerStatusCommand(program: Command): void {
 function printStatusTable(person: string, states: TrustState[]): void {
   const groups = groupByLevel(states);
 
-  console.log(`${chalk.bold('Trust Map:')} ${person}`);
-  console.log(chalk.dim(`Last updated: ${new Date().toISOString().slice(0, 10)}`));
+  console.log(renderHeader('Trust Map', person));
+  console.log(`  ${chalk.dim('Last updated: just now')}`);
+  console.log(renderSeparator());
   console.log('');
 
-  if (groups.verified.length > 0) {
-    console.log(chalk.green.bold(`VERIFIED (${groups.verified.length})`));
-    for (const s of groups.verified) {
-      console.log(formatStatusLine(s));
+  const levels = ['verified', 'inferred', 'contested', 'untested'] as const;
+  for (const level of levels) {
+    const group = groups[level];
+    if (group.length === 0) continue;
+
+    const sectionColor = level === 'verified' ? chalk.green.bold
+      : level === 'inferred' ? chalk.yellow.bold
+      : level === 'contested' ? chalk.redBright.bold
+      : chalk.dim.bold;
+    console.log(`  ${sectionColor(level.toUpperCase())}`);
+
+    for (const s of group) {
+      const icon = iconForLevel(s.level);
+      const name = s.conceptId.padEnd(CONCEPT_COL);
+
+      if (s.level === 'untested') {
+        console.log(`    ${icon} ${name}`);
+      } else {
+        const color = colorForLevelGradient(s.level, s.decayedConfidence);
+        const bar = renderBar(s.decayedConfidence, BAR_WIDTH, color);
+        const conf = formatConfidence(s.decayedConfidence);
+
+        let extras = '';
+        if (s.level === 'verified') {
+          const time = s.lastVerified ? formatTimeAgo(s.lastVerified) : '';
+          extras = `${chalk.dim(time)}   ${chalk.dim(formatModalities(s.modalitiesTested))}`;
+        } else if (s.level === 'inferred') {
+          extras = `inferred from ${s.inferredFrom.join(', ')}`;
+        } else if (s.level === 'contested') {
+          extras = summarizeConflict(s);
+        }
+
+        console.log(`    ${icon} ${name} ${bar} ${conf}  ${extras}`);
+      }
     }
     console.log('');
   }
 
-  if (groups.inferred.length > 0) {
-    console.log(chalk.yellow.bold(`INFERRED (${groups.inferred.length})`));
-    for (const s of groups.inferred) {
-      console.log(formatStatusLine(s));
-    }
-    console.log('');
+  console.log(renderSeparator());
+  const calData = getCalibrationData(states);
+  if (calData) {
+    console.log(renderHeader('Calibration', `${calData.accuracy}% accuracy · ${calData.stalePercent}% stale`));
   }
+}
 
-  if (groups.contested.length > 0) {
-    console.log(chalk.yellow.bold(`CONTESTED (${groups.contested.length})`));
-    for (const s of groups.contested) {
-      console.log(formatStatusLine(s));
-    }
-    console.log('');
-  }
+function getCalibrationData(states: TrustState[]): { accuracy: number; stalePercent: number } | null {
+  const withClaims = states.filter((s) => s.calibrationGap !== null);
+  if (withClaims.length === 0) return null;
 
-  if (groups.untested.length > 0) {
-    console.log(chalk.dim.bold(`UNTESTED (${groups.untested.length})`));
-    for (const s of groups.untested) {
-      console.log(formatStatusLine(s));
-    }
-    console.log('');
-  }
+  const avgGap = withClaims.reduce((sum, s) => sum + Math.abs(s.calibrationGap!), 0) / withClaims.length;
+  const accuracy = Math.round((1 - avgGap) * 100);
 
-  const calSummary = formatCalibrationSummary(states);
-  if (calSummary) {
-    console.log(chalk.dim(calSummary));
-  }
+  const staleCount = states.filter((s) => {
+    if (!s.lastVerified) return false;
+    return (Date.now() - s.lastVerified) > 60 * 24 * 60 * 60 * 1000;
+  }).length;
+  const stalePercent = states.length > 0 ? Math.round((staleCount / states.length) * 100) : 0;
+
+  return { accuracy, stalePercent };
 }
 
 function buildStatusJson(person: string, states: TrustState[]): unknown {

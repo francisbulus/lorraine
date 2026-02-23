@@ -3,9 +3,18 @@ import chalk from 'chalk';
 import { getStore, closeStore } from '../lib/store.js';
 import { loadConfig } from '../lib/config.js';
 import { loadBundles } from '../lib/domain.js';
-import { evaluateReadiness, suggestAction } from '../lib/role-gates.js';
+import { evaluateReadiness } from '../lib/role-gates.js';
 import type { ReadinessResult } from '../lib/role-gates.js';
-import { colorForLevel, iconForLevel, formatConfidence } from '../lib/formatters.js';
+import {
+  iconForLevel,
+  colorForLevelGradient,
+  renderBar,
+  renderHeader,
+  renderSeparator,
+  formatConfidence,
+  CONCEPT_COL,
+  BAR_WIDTH,
+} from '../lib/formatters.js';
 import { EXIT_POLICY_UNMET, EXIT_CONFIG_ERROR } from '../types.js';
 
 export function registerReadyCommand(program: Command): void {
@@ -63,32 +72,32 @@ export function registerReadyCommand(program: Command): void {
 }
 
 function printReadinessTable(result: ReadinessResult): void {
-  console.log(`${chalk.bold('Readiness:')} ${result.person} → ${result.bundle}`);
+  console.log(renderHeader('Readiness', `${result.person} → ${result.bundle}`));
+  console.log(renderSeparator());
   console.log('');
 
   for (const gate of result.gates) {
-    const icon = gate.passed ? iconForLevel(gate.state.level) : (gate.state.level === 'untested' ? chalk.dim('·') : chalk.red('✗'));
-    const name = chalk.bold(gate.requirement.concept.padEnd(26));
-    const color = colorForLevel(gate.state.level);
-    const levelStr = color(`${gate.state.level} (${formatConfidence(gate.state.decayedConfidence)})`);
-    const status = gate.passed
-      ? chalk.green('MEETS REQUIREMENT')
-      : chalk.red(`DOES NOT MEET (requires ${gate.requirement.minLevel})`);
+    const icon = gate.passed
+      ? iconForLevel(gate.state.level)
+      : chalk.red('✗');
+    const name = gate.requirement.concept.padEnd(CONCEPT_COL);
+    const color = colorForLevelGradient(gate.state.level, gate.state.decayedConfidence);
+    const bar = renderBar(gate.state.decayedConfidence, BAR_WIDTH, color);
+    const conf = formatConfidence(gate.state.decayedConfidence);
+    const status = gate.passed ? chalk.green('PASS') : chalk.red('BLOCK');
+    const gateType = gate.requirement.minLevel === 'verified' ? 'hard' : 'soft';
+    const gateLabel = gate.passed
+      ? chalk.dim(`[${gateType}]`)
+      : chalk.dim(`[${gateType} · ${gate.state.level}]`);
 
-    console.log(`  ${icon} ${name} ${levelStr.padEnd(40)} ${status}`);
+    console.log(`    ${icon} ${name} ${bar} ${conf}  ${status}    ${gateLabel}`);
   }
 
   console.log('');
+  console.log(renderSeparator());
   if (result.passed) {
-    console.log(chalk.green.bold(`Result: READY (${result.passedCount} of ${result.totalCount} requirements met)`));
+    console.log(renderHeader('Result', `${chalk.green.bold('READY')} · ${result.passedCount} of ${result.totalCount} met`));
   } else {
-    console.log(chalk.red.bold(`Result: NOT READY (${result.passedCount} of ${result.totalCount} requirements met)`));
-    console.log('');
-    console.log(chalk.bold('Next steps:'));
-    for (const gate of result.gates) {
-      if (!gate.passed) {
-        console.log(`  ${suggestAction(gate)}`);
-      }
-    }
+    console.log(renderHeader('Result', `${chalk.red.bold('NOT READY')} · ${result.passedCount} of ${result.totalCount} met`));
   }
 }

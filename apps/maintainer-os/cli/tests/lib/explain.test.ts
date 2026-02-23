@@ -98,7 +98,7 @@ describe('formatExplanation', () => {
 
       const data = buildExplanation(store, 'alice', 'rollback-strategy');
       const output = formatExplanation(data);
-      expect(output).toContain('Trust Explanation');
+      expect(output).toContain('Explanation');
       expect(output).toContain('rollback-strategy');
       expect(output).toContain('Evidence chain');
       expect(output).toContain('demonstrated');

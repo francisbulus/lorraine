@@ -5,7 +5,16 @@ import { loadConfig } from '../lib/config.js';
 import { loadPeople } from '../lib/domain.js';
 import { scoreReviewers } from '../lib/reviewer-scoring.js';
 import type { ReviewerScore } from '../lib/reviewer-scoring.js';
-import { colorForLevel, formatConfidence, formatTimeAgo } from '../lib/formatters.js';
+import {
+  colorForLevelGradient,
+  renderBar,
+  renderHeader,
+  renderSeparator,
+  formatConfidence,
+  formatTimeAgo,
+  CONCEPT_COL,
+  BAR_WIDTH,
+} from '../lib/formatters.js';
 
 export function registerReviewersCommand(program: Command): void {
   program
@@ -51,24 +60,35 @@ export function registerReviewersCommand(program: Command): void {
 }
 
 function printReviewerTable(conceptIds: string[], scores: ReviewerScore[]): void {
-  console.log(`${chalk.bold('Recommended Reviewers:')} ${conceptIds.join(', ')}`);
+  console.log(renderHeader('Reviewers', conceptIds.join(', ')));
+  console.log(renderSeparator());
   console.log('');
 
   for (const [i, score] of scores.entries()) {
-    console.log(`  ${chalk.bold(`${i + 1}. ${score.personId}`)}`);
-    for (const cs of score.conceptScores) {
-      const color = colorForLevel(cs.level);
-      const timeStr = cs.lastVerified ? `, ${formatTimeAgo(cs.lastVerified)}` : '';
-      console.log(`     ${cs.conceptId}: ${color(`${cs.level} (${formatConfidence(cs.decayedConfidence)}${timeStr})`)}`);
-    }
     const coverage = [];
     if (score.verifiedCount > 0) coverage.push(`${score.verifiedCount}/${conceptIds.length} verified`);
     if (score.inferredCount > 0) coverage.push(`${score.inferredCount}/${conceptIds.length} inferred`);
-    console.log(`     Coverage: ${coverage.join(', ')}`);
+    const coverageStr = coverage.join(', ');
+
+    // Right-align coverage on the name line
+    const nameStr = `${i + 1}. ${score.personId}`;
+    const totalWidth = 52;
+    const padding = Math.max(1, totalWidth - nameStr.length - coverageStr.length);
+    console.log(`  ${chalk.bold(nameStr)}${' '.repeat(padding)}${chalk.dim(coverageStr)}`);
+
+    for (const cs of score.conceptScores) {
+      const color = colorForLevelGradient(cs.level, cs.decayedConfidence);
+      const bar = renderBar(cs.decayedConfidence, BAR_WIDTH, color);
+      const conf = formatConfidence(cs.decayedConfidence);
+      const time = cs.lastVerified ? formatTimeAgo(cs.lastVerified) : '';
+      const levelTime = time ? `${cs.level} · ${time}` : cs.level;
+      console.log(`     ${cs.conceptId.padEnd(CONCEPT_COL)} ${bar} ${conf}   ${chalk.dim(levelTime)}`);
+    }
     console.log('');
   }
 
-  console.log(chalk.dim(`Details: mos why --person <name> --concept <concept>`));
+  console.log(renderSeparator());
+  console.log(`  ${chalk.dim('Detail: mos why --person <name> --concept <concept>')}`);
 }
 
 function scoreToJson(score: ReviewerScore): unknown {
