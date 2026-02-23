@@ -1,39 +1,39 @@
 # Lorraine — Why LLMs
 
-**Version:** 0.1<br>
-**Last Updated:** February 22, 2026
+**Version:** 0.2<br>
+**Last Updated:** February 23, 2026
 
 ---
 
 ## The Core Loop
 
-The trust engine's fundamental operation is:
+The framework's richest operation is:
 
 **Observe natural human behavior → Extract structured meaning → Generate natural human interaction**
 
-This is what LLMs do. No other technology makes this loop possible at the quality level the engine requires.
+This is what LLMs do. No other technology makes this loop possible at the quality level the framework requires.
 
-## What the Engine Needs
+## What the Framework Needs
 
 ### On the input side
 
-The trust engine needs to know what someone understands. The best signal for that is how they talk — what they ask, how they explain things, where they hesitate, when they self-correct, what connections they make unprompted. All of this is unstructured natural language.
+The framework needs to know what someone understands. The best signal for that is how they talk — what they ask, how they explain things, where they hesitate, when they self-correct, what connections they make unprompted. All of this is unstructured natural language.
 
-Before LLMs, there was no way to extract structured trust signals from a sentence like: *"oh, so TCP's retransmission is basically the same idea as write-ahead logging, right?"*
+Before LLMs, there was no way to extract structured trust signals from a sentence like: *"oh wait, database replication is basically the same consistency problem as distributed caching, right?"*
 
-That sentence reveals transfer-level understanding across two domains — networking and databases. It demonstrates the person has abstracted a principle (acknowledgment-based reliability) and recognized it in a novel context. A rule-based system can't parse that. An LLM can.
+That sentence reveals transfer-level understanding across two domains. It demonstrates the person has abstracted a principle (consistency guarantees across replicated state) and recognized it in a novel context. A rule-based system can't parse that. An LLM can.
 
 ### On the output side
 
-The system needs to generate explanations at the right depth, questions along the right difficulty axis, annotations calibrated to what the person already knows, and threshold prompts that feel like conversation rather than UI.
+Applications built on the framework need to generate explanations at the right depth, questions along the right difficulty axis, annotations calibrated to what the person already knows, and prompts that feel like conversation rather than UI.
 
-All of this requires generating natural language that is contextually aware of the person's specific state. Before LLMs, you'd need to pre-write thousands of explanations and questions for every concept at every depth for every possible state. With an LLM, you describe what you need — "generate a transfer question about TCP reliability for someone who understands acknowledgments but hasn't seen congestion control" — and get it.
+All of this requires generating natural language that is contextually aware of the person's specific state. Before LLMs, you'd need to pre-write thousands of explanations and questions for every concept at every depth for every possible state. With an LLM, you describe what you need — "generate a transfer question about container orchestration for someone who understands process isolation but hasn't seen service discovery" — and get it.
 
 ### In the middle
 
-The implicit signal extraction is what makes conversation the primary interface rather than a wrapper around structured modes. The `extractImplicitSignals` API — detecting that someone casually used a concept correctly, or asked a question that reveals a hidden gap — is only possible because LLMs can understand the semantic content of natural conversation.
+Implicit signal extraction is what makes conversation a viable verification surface rather than a wrapper around structured tests. The `extractImplicitSignals` service — detecting that someone casually used a concept correctly, or asked a question that reveals a hidden gap — is only possible because LLMs can understand the semantic content of natural conversation.
 
-Similarly, claim extraction — parsing "I think I understand this" or "I'm not sure about that part" as structured claim events distinct from verification evidence — requires semantic understanding of self-assessment language.
+Similarly, claim extraction — parsing "I think I've got the hang of this" or "honestly I'm still shaky on that part" as structured claim events distinct from verification evidence — requires semantic understanding of self-assessment language.
 
 This is what makes every conversation turn both a verification moment and a calibration moment. Without it, verification only happens during explicit tests and claims only happen through forms. With it, the trust model updates continuously from the richest possible signal source.
 
@@ -41,7 +41,7 @@ This is what makes every conversation turn both a verification moment and a cali
 
 Three things that were previously impossible:
 
-**1. Conversation as the real interface.** Not a chatbot skin over a structured app, but conversation as the actual medium through which the trust model is built and maintained. The person talks naturally. The system understands.
+**1. Conversation as a real verification surface.** Not a chatbot skin over a structured app, but conversation as an actual medium through which the trust model is built and maintained. The person talks naturally. The framework understands.
 
 **2. Continuous implicit verification and claim capture.** Every utterance is a potential trust signal or self-assessment, not just explicit test moments. The person doesn't have to stop to be tested or to formally declare what they know. Observation, interaction, and calibration happen simultaneously.
 
@@ -49,29 +49,31 @@ Three things that were previously impossible:
 
 ## What Exists Without LLMs
 
-Without LLMs, you could still build the trust graph, the decay function, the propagation rules, the verification loop. The engine core's logic is deterministic and doesn't require an LLM.
+Without LLMs, you can still build the full framework — the schema, the data layer, the computation rules, the query layer. The four layers are deterministic and have zero LLM dependencies.
 
-But you'd have to feed it through rigid interfaces — multiple choice questions, structured input forms, pre-written content, predefined interaction patterns. The person would have to translate their thinking into the system's language. The system would never see the richest signals — integrated use of concepts, natural self-corrections, cross-domain connections, self-assessment embedded in conversation. The person would be interacting with a system, not having a conversation.
+You can feed verification events through structured interfaces — multiple choice questions, code execution results, CI/CD pipeline events, exam scores, external observation events. A hiring manager could manually record "candidate demonstrated understanding of incident response during live exercise." An onboarding system could ingest deploy events as verification signals. The framework handles all of this without an LLM touching anything.
 
-The engine core can work without an LLM — with manual input of verification and claim events. But it would be like using an OS through raw system calls instead of a natural interface. Technically possible. Practically unusable for most people.
+But you'd lose the richest signals — integrated use of concepts in natural reasoning, spontaneous self-corrections, cross-domain connections, self-assessment embedded in conversation. The person would be interacting with forms, not having a conversation.
+
+The framework works without LLMs. It works better with them.
 
 ## Architectural Implication
 
-This is why the architecture has three layers: engine core, engine services, and applications.
+This is why the framework separates cleanly into layers:
 
-- **The engine core** is the source of truth. It owns the trust model, the propagation rules, the decay function, the event log. It is deterministic, auditable, and has zero LLM dependencies.
-- **The engine services** are the LLM-powered adapters. They translate between natural human interaction and the core's structured operations. They observe, extract, interpret, and generate. They sit between the core and applications.
-- **Applications** orchestrate the experience — conversation, modes, maps, thresholds — using both core and services.
+**The four framework layers** (schema, data, computation, query) are deterministic. No LLM dependency. No probabilistic behavior. The trust math is the trust math regardless of how events arrive. The framework can run fully encrypted client-side. It can process events from a script, a CI/CD pipeline, or a form — no natural language involved.
 
-The core/services separation matters because:
+**Services** (built on top of the framework) are where LLMs live. They translate between natural human interaction and the framework's structured operations. They observe, extract, interpret, and generate. They are optional, pluggable, and replaceable.
 
-- The core's integrity must not depend on any specific model or provider. Models change. The trust math shouldn't.
-- LLMs are probabilistic. The core's operations must be deterministic. The boundary between them must be explicit.
-- The core can run fully encrypted client-side. The services layer is where plaintext meets the LLM. Separating them makes the encryption tension manageable.
-- Different deployment models (cloud vs. self-hosted) may use different LLM providers. Different application contexts (learning vs. hiring vs. certification) may use different service configurations. The core doesn't care.
+This separation matters because:
+
+- The framework's integrity must not depend on any specific model or provider. Models change. The trust math shouldn't.
+- LLMs are probabilistic. The framework's computation is deterministic. The boundary between them must be explicit.
+- Different applications may use different LLM providers, or no LLM at all. The framework doesn't care.
+- The framework can run encrypted. The services layer is where plaintext meets the LLM. Separating them makes the security model clean.
 
 The coupling matters because:
 
-- Without the services, the core is a database with a good schema. Correct but inert.
-- Without the core, the LLM is a chatbot with no memory and no epistemic integrity. Fluent but unreliable.
+- Without services, the framework is an honest database with good opinions. Correct but limited to structured input.
+- Without the framework, an LLM is a chatbot with no memory and no epistemic integrity. Fluent but unreliable.
 - Together, they produce something neither can produce alone: a system that has a natural conversation while silently building an honest, structured, auditable model of what someone actually knows.
