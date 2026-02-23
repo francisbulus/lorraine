@@ -12,7 +12,7 @@ Lorraine is a verifiable epistemic trust engine — it tracks what someone actua
 
 The engine is application-agnostic. It serves any context where the gap between "claims to know" and "actually knows" has consequences: learning, hiring, onboarding, certification, organizational competency, AI evaluation.
 
-The first application built on Lorraine is a learning OS (see learning-os.md): a conversational agent that builds a map of what you know, collapses the cost of trying, and gets out of your way so you can discover — not be told — that you understand.
+The reference application built on Lorraine is [Terrain](../apps/terrain/SPEC.md): a learning OS with a conversational agent that builds a map of what you know, collapses the cost of trying, and gets out of your way so you can discover — not be told — that you understand.
 
 ---
 
