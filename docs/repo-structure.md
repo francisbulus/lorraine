@@ -92,55 +92,20 @@ lorraine/
 │   │                                  # Each app is opinionated. The framework is not.
 │   │                                  # Apps depend on engine, never the reverse.
 │   │
-│   └── terrain/                       # Reference application: Terrain (Learning OS)
-│       │                              # See apps/terrain/SPEC.md for full specification.
+│   └── maintainer-os/                 # Reference application: MaintainerOS (CLI)
+│       │                              # See apps/maintainer-os/README.md for full specification.
 │       │
-│       ├── SPEC.md                    # Terrain spec: beliefs, agent, modes, guardrails
-│       ├── conversation/              # The primary interface
-│       │   ├── loop.ts                # processConversationTurn: main interaction loop
-│       │   ├── mode-detection.ts      # Detect when conversation should become a mode
-│       │   ├── claims.ts              # Claim extraction from natural conversation
-│       │   └── history.ts             # Session history and continuity
-│       │
-│       ├── modes/                     # The six verification surfaces
-│       │   ├── explain/               # First-principles layered explanation
-│       │   │   ├── depth-ladder.ts    # The four-layer depth model
-│       │   │   └── renderer.ts        # How explanations are presented
-│       │   ├── sandbox/               # Annotated code execution
-│       │   │   ├── runtime.ts         # Code execution environment
-│       │   │   ├── annotator.ts       # The annotation engine
-│       │   │   └── suggestions.ts     # Experiment suggestion logic
-│       │   ├── grill/                 # Adaptive questioning
-│       │   │   ├── generator.ts       # Question generation (uses engine + LLM)
-│       │   │   ├── difficulty.ts      # Difficulty axis selection
-│       │   │   └── feedback.ts        # Post-answer flow
-│       │   ├── sketch/                # Visual thinking canvas
-│       │   │   ├── canvas.ts          # Drawing surface
-│       │   │   └── critique.ts        # Agent analysis of sketches
-│       │   ├── write/                 # Feynman technique writing
-│       │   │   ├── editor.ts          # Writing surface
-│       │   │   └── feedback.ts        # Real-time gap detection
-│       │   └── provision/             # Environment provisioning
-│       │       ├── templates.ts       # Pre-built environment templates
-│       │       └── lifecycle.ts       # Create, snapshot, restore, destroy
-│       │
-│       ├── map/                       # The trust map visualization
-│       │   ├── renderer.ts            # How the map is displayed
-│       │   ├── territories.ts         # Territory clustering and ownership computation
-│       │   ├── thresholds.ts          # Threshold detection and readiness criteria
-│       │   ├── navigation.ts          # Interaction with the map
-│       │   └── trust-dashboard.ts     # The transparent trust state view
-│       │
-│       ├── calibration/               # Self-calibration view
-│       │   └── view.ts               # Claim vs. evidence gap visualization
-│       │
-│       ├── guardrails/                # Operational integrity rules
-│       │   ├── signal-policy.ts       # Implicit signal write policy
-│       │   ├── claim-rules.ts         # Claim extraction rules
-│       │   └── dedup.ts              # Signal deduplication
-│       │
-│       └── ui/                        # Frontend
-│           └── ...
+│       ├── SPEC.md                    # MaintainerOS spec: trust maps, readiness, evidence chains
+│       ├── README.md                  # Quick start, commands, project structure
+│       ├── cli/
+│       │   ├── src/
+│       │   │   ├── commands/          # CLI command handlers (status, ready, reviewers, why, calibrate)
+│       │   │   └── lib/               # Formatters, config, store, scoring, explanation
+│       │   ├── tests/                 # Unit, integration, and E2E tests
+│       │   └── fixtures/              # Example domain pack and event files
+│       └── docs/
+│           ├── specs/                 # CLI spec, product spec
+│           └── tasks/                 # Numbered implementation tasks
 │
 └── tests/
     ├── engine/                        # Framework tests: must pass independently of any app
@@ -149,9 +114,7 @@ lorraine/
     │   ├── services/
     │   └── epistemics/
     ├── domains/                       # Domain graph validation tests
-    ├── integration/                   # Engine + LLM integration tests
-    └── apps/
-        └── terrain/                   # Terrain application tests
+    └── integration/                   # Engine + LLM integration tests
 ```
 
 ## Key Structural Decisions
@@ -172,10 +135,10 @@ Domain knowledge graphs live in `domains/` as JSON, not as application logic. Ad
 The `llm/` directory abstracts model providers. The engine services define what they need (through `llm/interface.ts`). Providers implement that interface. Switching from Claude to a local model means changing a config, not refactoring.
 
 ### 6. Apps depend on engine, never the reverse
-`apps/terrain/` imports from `engine/`. `engine/` never imports from `apps/`. This is enforced structurally. The framework doesn't know what applications exist. Each application is opinionated; the engine is not.
+`apps/maintainer-os/` imports from `engine/`. `engine/` never imports from `apps/`. This is enforced structurally. The framework doesn't know what applications exist. Each application is opinionated; the engine is not.
 
 ### 7. Tests mirror the architecture
 Engine tests run without any app. App tests run with the engine. This validates that the framework works independently of any application built on it.
 
 ### 8. Application-level concepts live in applications
-Territories, thresholds, goals, sessions, maps, modes, guardrails: these are Terrain concepts, not framework concepts. They live in `apps/terrain/`, not in `engine/`. Other applications built on Lorraine will have their own application-level concepts.
+Trust maps, readiness gates, capability bundles, reviewer scoring: these are MaintainerOS concepts, not framework concepts. They live in `apps/maintainer-os/`, not in `engine/`. Other applications built on Lorraine will have their own application-level concepts.

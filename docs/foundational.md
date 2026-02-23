@@ -85,7 +85,7 @@ Different people approach understanding differently. The system does not privile
 **Default 11: Foundational capability over topical coverage.**
 Deep understanding of core principles transfers to novel problems. The system prioritizes depth on foundations over breadth across topics. Growth is not knowing more things. It's trusting your ability to engage with hard new things.
 
-Application-specific policies (e.g., the Terrain learning OS policies on no praise, no gamification, no urgency) live in their respective application specs, not here. See `apps/terrain/SPEC.md` for an example.
+Application-specific policies live in their respective application specs, not here. See `apps/maintainer-os/SPEC.md` for an example.
 
 ---
 

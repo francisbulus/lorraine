@@ -8,7 +8,7 @@ Always read and follow the skills in `apps/skills/`. These define coding standar
 
 ## Workflow
 
-1. **Start of session:** Read the relevant app's `SESSION.md` (e.g. `apps/terrain/SESSION.md`)
+1. **Start of session:** Read the relevant app's `SESSION.md` (e.g. `apps/maintainer-os/SESSION.md`)
 2. **Find current task:** Check `apps/<app>/docs/tasks/` for the next incomplete task
 3. **Do the work:** Follow the task's acceptance criteria
 4. **End of session:** Update the app's `SESSION.md` with progress, blockers, next steps
@@ -71,7 +71,5 @@ Applications that are not web UIs (CLIs, SDKs, APIs) will not have a design syst
 CLI applications have a `docs/specs/cli.md` file. **Before implementing any CLI command, read the CLI spec fully.** It defines UX principles, output formatting conventions, color usage, exit codes, error message style, and example output layouts. These are the equivalent of a design system for terminal interfaces.
 
 ## Applications
-
-- **terrain/** — A learning OS. Conversational agent that builds a map of what you know. Web app (Next.js + Tailwind with design system tokens as CSS custom properties). See `apps/terrain/SPEC.md` and `apps/terrain/docs/design-system.md`.
 
 - **maintainer-os/** — Evidence ops for codebase understanding. CLI-first tool for engineering teams to answer who actually understands the codebase deeply enough to review, ship, and recover it safely. See `apps/maintainer-os/SPEC.md`.

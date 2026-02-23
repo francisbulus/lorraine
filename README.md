@@ -98,9 +98,9 @@ tests/                  — mirrors engine structure
 
 The engine is the SDK. Import it and call the interface directly. If you need HTTP access, wrap it in a server. That's a few lines. If you need Lorraine in another language, implement the spec. The spec is in `docs/`. The engine is the reference implementation.
 
-## Reference application: Terrain
+## Reference application: MaintainerOS
 
-A learning OS built on Lorraine. A conversational agent backed by the trust framework, with a map that shows what you know, where the boundaries are, and where to go next. Terrain proves the framework works for self-directed learning. See `apps/terrain/SPEC.md`.
+A CLI tool for engineering teams that answers "who actually understands this codebase?" with evidence. Models demonstrated understanding, inferred understanding, decay, and contestation across a codebase's concept graph. See `apps/maintainer-os/README.md`.
 
 ## Docs
 
