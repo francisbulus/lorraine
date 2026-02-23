@@ -69,3 +69,5 @@ Applications that are not web UIs (CLIs, SDKs, APIs) will not have a design syst
 ## Applications
 
 - **terrain/** — A learning OS. Conversational agent that builds a map of what you know. Web app (Next.js + Tailwind with design system tokens as CSS custom properties). See `apps/terrain/SPEC.md` and `apps/terrain/docs/design-system.md`.
+
+- **maintainer-os/** — Evidence ops for codebase understanding. CLI-first tool for engineering teams to answer who actually understands the codebase deeply enough to review, ship, and recover it safely. See `apps/maintainer-os/SPEC.md`.
