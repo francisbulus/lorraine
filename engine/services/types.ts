@@ -51,13 +51,13 @@ export interface InterpretResponseInput {
 
 export interface TrustUpdate {
   conceptId: string;
+  result: 'demonstrated' | 'failed' | 'partial';
   previousState: TrustState | null;
   newState: TrustState;
   evidence: string;
 }
 
 export interface InterpretResponseResult {
-  result: 'demonstrated' | 'failed' | 'partial';
   trustUpdates: TrustUpdate[];
   contestedDetected: boolean;
   implicitSignals: ImplicitSignal[];

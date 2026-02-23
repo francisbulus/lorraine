@@ -17,10 +17,10 @@ Your job is to assess a person's response to a verification prompt and determine
 
 You must output valid JSON with this structure:
 {
-  "result": "demonstrated" | "failed" | "partial",
   "trustUpdates": [
     {
       "conceptId": "concept_id",
+      "result": "demonstrated" | "failed" | "partial",
       "evidence": "what specifically in the response shows this"
     }
   ],
@@ -34,6 +34,8 @@ You must output valid JSON with this structure:
     }
   ]
 }
+
+A single response can touch multiple concepts with different results. Each trust update carries its own result.
 
 Rules:
 - Be honest about failure — failure is the most informative event (Invariant 4)
@@ -91,8 +93,7 @@ function parseInterpretResponse(
     }
 
     const parsed = JSON.parse(jsonMatch[0]) as {
-      result?: string;
-      trustUpdates?: Array<{ conceptId?: string; evidence?: string }>;
+      trustUpdates?: Array<{ conceptId?: string; result?: string; evidence?: string }>;
       contestedDetected?: boolean;
       implicitSignals?: Array<{
         conceptId?: string;
@@ -102,19 +103,19 @@ function parseInterpretResponse(
       }>;
     };
 
-    const result = VALID_RESULTS.includes(parsed.result as typeof VALID_RESULTS[number])
-      ? (parsed.result as 'demonstrated' | 'failed' | 'partial')
-      : 'partial';
-
     const trustUpdates = (parsed.trustUpdates ?? [])
       .filter(u => u.conceptId && u.evidence)
       .map(u => {
+        const result = VALID_RESULTS.includes(u.result as typeof VALID_RESULTS[number])
+          ? (u.result as 'demonstrated' | 'failed' | 'partial')
+          : 'partial';
         const prevState = getTrustState(store, {
           personId: input.personId,
           conceptId: u.conceptId!,
         });
         return {
           conceptId: u.conceptId!,
+          result,
           previousState: prevState.level === 'untested' ? null : prevState,
           newState: prevState, // Actual new state is computed by core after recording
           evidence: u.evidence!,
@@ -137,15 +138,13 @@ function parseInterpretResponse(
       }));
 
     return {
-      result,
       trustUpdates,
       contestedDetected: parsed.contestedDetected ?? false,
       implicitSignals,
     };
   } catch {
-    // Fallback: partial with no details.
+    // Fallback: no details.
     return {
-      result: 'partial',
       trustUpdates: [],
       contestedDetected: false,
       implicitSignals: [],

@@ -34,9 +34,9 @@ describe('interpretResponse', () => {
     const veId = state.verificationHistory[state.verificationHistory.length - 1]!.id;
 
     const llm = createMockLLM(JSON.stringify({
-      result: 'demonstrated',
       trustUpdates: [{
         conceptId: CONCEPTS.A.id,
+        result: 'demonstrated',
         evidence: 'Correctly described acknowledgment-based reliability',
       }],
       contestedDetected: false,
@@ -50,9 +50,9 @@ describe('interpretResponse', () => {
       responseModality: 'grill:recall',
     });
 
-    expect(result.result).toBe('demonstrated');
     expect(result.trustUpdates).toHaveLength(1);
     expect(result.trustUpdates[0]!.conceptId).toBe(CONCEPTS.A.id);
+    expect(result.trustUpdates[0]!.result).toBe('demonstrated');
     expect(result.trustUpdates[0]!.evidence).toContain('acknowledgment');
     expect(result.contestedDetected).toBe(false);
   });
@@ -69,9 +69,9 @@ describe('interpretResponse', () => {
     const veId = state.verificationHistory[state.verificationHistory.length - 1]!.id;
 
     const llm = createMockLLM(JSON.stringify({
-      result: 'failed',
       trustUpdates: [{
         conceptId: CONCEPTS.B.id,
+        result: 'failed',
         evidence: 'Could not explain why SYN-ACK is needed',
       }],
       contestedDetected: true,
@@ -90,7 +90,7 @@ describe('interpretResponse', () => {
       responseModality: 'grill:inference',
     });
 
-    expect(result.result).toBe('failed');
+    expect(result.trustUpdates[0]!.result).toBe('failed');
     expect(result.contestedDetected).toBe(true);
     expect(result.implicitSignals).toHaveLength(1);
     expect(result.implicitSignals[0]!.signalType).toBe('confusion_signal');
@@ -116,7 +116,6 @@ describe('interpretResponse', () => {
       responseModality: 'grill:recall',
     });
 
-    expect(result.result).toBe('partial');
     expect(result.trustUpdates).toHaveLength(0);
     expect(result.implicitSignals).toHaveLength(0);
   });
@@ -133,9 +132,9 @@ describe('interpretResponse', () => {
     const veId = state.verificationHistory[state.verificationHistory.length - 1]!.id;
 
     const llm = createMockLLM(JSON.stringify({
-      result: 'demonstrated',
       trustUpdates: [{
         conceptId: CONCEPTS.C.id,
+        result: 'demonstrated',
         evidence: 'Applied sequence numbers correctly',
       }],
       contestedDetected: false,
@@ -179,7 +178,6 @@ describe('interpretResponse', () => {
     const veId = state.verificationHistory[state.verificationHistory.length - 1]!.id;
 
     const llm = createMockLLM(JSON.stringify({
-      result: 'demonstrated',
       trustUpdates: [],
       contestedDetected: false,
       implicitSignals: [{
@@ -216,7 +214,6 @@ describe('interpretResponse', () => {
       async complete(_system, messages) {
         capturedUserMessage = messages[0]!.content;
         return { content: JSON.stringify({
-          result: 'demonstrated',
           trustUpdates: [],
           contestedDetected: false,
           implicitSignals: [],
