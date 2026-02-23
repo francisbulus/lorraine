@@ -113,6 +113,7 @@ A learning OS built on Lorraine. A conversational agent backed by the trust fram
 | [`docs/philosophy.md`](docs/philosophy.md) | Intellectual lineage — Code, Fricker, Goldman, Fonagy |
 | [`docs/why-llms.md`](docs/why-llms.md) | Why LLMs are architecturally necessary for rich interaction |
 | [`docs/auditability.md`](docs/auditability.md) | What the architecture lets you answer for free |
+| [`docs/building-on-lorraine.md`](docs/building-on-lorraine.md) | End-to-end example of building an application on the framework |
 
 ## Named after
 
