@@ -1,0 +1,24 @@
+{
+  "name": "@lorraine/maintainer-os",
+  "version": "0.1.0",
+  "description": "Evidence ops for codebase understanding. CLI tool for engineering teams.",
+  "type": "module",
+  "scripts": {
+    "mos": "tsx src/cli.ts",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "chalk": "^5.4.1",
+    "cli-table3": "^0.6.5",
+    "commander": "^13.1.0"
+  },
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^25.3.0",
+    "tsx": "^4.19.4",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18"
+  }
+}
