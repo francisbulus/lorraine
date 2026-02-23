@@ -68,17 +68,13 @@ export function formatExplanation(data: ExplanationData): string {
     lines.push('');
   }
 
-  // Engine explanation
-  lines.push(chalk.dim(explanation.reasoning));
-
   // Calibration gap
   if (state.calibrationGap !== null) {
-    const direction = state.calibrationGap > 0 ? 'overclaiming' : 'underclaiming';
+    lines.push(chalk.dim(`Calibration gap: ${state.calibrationGap > 0 ? '+' : ''}${state.calibrationGap.toFixed(2)} (${state.calibrationGap > 0 ? 'overclaiming' : 'underclaiming'})`));
     lines.push('');
-    lines.push(chalk.dim(`Calibration gap: ${state.calibrationGap > 0 ? '+' : ''}${state.calibrationGap.toFixed(2)} (${direction})`));
   }
 
-  return lines.join('\n');
+  return lines.join('\n').trimEnd();
 }
 
 function formatVerificationLine(num: number, event: VerificationEvent): string {
