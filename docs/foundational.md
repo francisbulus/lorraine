@@ -1,7 +1,7 @@
 # Lorraine — Foundational Spec
 
-**Version:** 0.4 (Draft)
-**Last Updated:** February 22, 2026
+**Version:** 0.4 (Draft)<br>
+**Last Updated:** February 22, 2026<br>
 **Governs:** This document defines the conceptual foundation. All other specs derive from it. Where they conflict, this document governs.
 
 ---

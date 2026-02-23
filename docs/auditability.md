@@ -1,6 +1,6 @@
 # Lorraine — Auditability & Introspection
 
-**Version:** 0.2
+**Version:** 0.2<br>
 **Last Updated:** February 22, 2026
 
 ---

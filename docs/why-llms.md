@@ -1,6 +1,6 @@
 # Lorraine — Why LLMs
 
-**Version:** 0.1
+**Version:** 0.1<br>
 **Last Updated:** February 22, 2026
 
 ---

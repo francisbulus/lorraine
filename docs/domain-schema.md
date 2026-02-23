@@ -1,22 +1,22 @@
-# Lorraine — Domain Schema
+# Lorraine: Domain Schema
 
-**Version:** 0.2
+**Version:** 0.2<br>
 **Last Updated:** February 22, 2026
 
 ---
 
 ## What a Domain Is
 
-A domain is a portable, application-agnostic package of knowledge structure. It describes what can be known about a subject — concepts, how they relate, how they cluster into territories, and where the boundaries between territories are.
+A domain is a portable, application-agnostic package of knowledge structure. It describes what can be known about a subject: concepts, how they relate, how they cluster into territories, and where the boundaries between territories are.
 
 A domain does NOT contain:
 
-- What counts as "known" — the application decides
-- Who is the claimant and who is the verifier — the application decides
-- How verification happens — the engine core and services layer decide
-- What approach should be taken — the person being assessed decides
-- What trust level is required — the application decides
-- Time constraints or deadlines — the application decides
+- What counts as "known": the application decides
+- Who is the claimant and who is the verifier: the application decides
+- How verification happens: the engine core and services layer decide
+- What approach should be taken: the person being assessed decides
+- What trust level is required: the application decides
+- Time constraints or deadlines: the application decides
 
 The same domain schema works for learning, hiring, onboarding, certification, organizational competency mapping, and any other context where the question is "does this person actually understand this?"
 
@@ -175,13 +175,13 @@ Example: TCP handshake (`tcp-handshake`) appears in both a networking domain and
 
 This also works across application contexts. A candidate whose understanding of database replication was verified during a hiring process carries that trust into onboarding at the same company. They don't get re-assessed on something already demonstrated. The engine already knows.
 
-Cross-domain trust is handled by convention, not by a central registry. Domain authors use the same id for the same concept. If two domains use different ids for what is actually the same concept, they'll be treated as separate nodes — suboptimal but not broken. A deduplication tool can merge them later.
+Cross-domain trust is handled by convention, not by a central registry. Domain authors use the same id for the same concept. If two domains use different ids for what is actually the same concept, they'll be treated as separate nodes, suboptimal but not broken. A deduplication tool can merge them later.
 
 ### How to decide if two concepts are the same
 
-If a person who demonstrates understanding of concept A in domain X would not need to re-demonstrate understanding of the same concept in domain Y — it's the same concept. Same id.
+If a person who demonstrates understanding of concept A in domain X would not need to re-demonstrate understanding of the same concept in domain Y, it's the same concept. Same id.
 
-If the concept is the same idea but applied differently in each domain — it might be two related concepts rather than one shared concept. Use different ids with a `related_to` relationship.
+If the concept is the same idea but applied differently in each domain, it might be two related concepts rather than one shared concept. Use different ids with a `related_to` relationship.
 
 ---
 
@@ -194,13 +194,13 @@ Not all verification happens inside Lorraine. In many application contexts, unde
 - A code review tool shows that a developer caught a security vulnerability
 - A patient management system logs that a doctor followed the correct treatment protocol
 
-These external systems can write verification events to the engine through the SDK's `recordVerification` API. The domain schema doesn't need to account for this — the engine's verification model already handles it. The source of a verification event can be a conversation, a grill question, a sandbox experiment, or Jenkins. The engine doesn't care. It just records the event and updates trust.
+These external systems can write verification events to the engine through the SDK's `recordVerification` API. The domain schema doesn't need to account for this. The engine's verification model already handles it. The source of a verification event can be a conversation, a grill question, a sandbox experiment, or Jenkins. The engine doesn't care. It just records the event and updates trust.
 
 ---
 
 ## The Principles Layer (Future)
 
-Cross-domain principles — abstract ideas that manifest as different concepts in different domains — are not yet part of the schema. When built, they will look approximately like:
+Cross-domain principles, abstract ideas that manifest as different concepts in different domains, are not yet part of the schema. When built, they will look approximately like:
 
 ```typescript
 interface Principle {
@@ -216,7 +216,7 @@ interface Principle {
 }
 ```
 
-Principles enable cross-domain inference at a deeper level than shared concepts. Demonstrating understanding of acknowledgment-based reliability in TCP (networking) creates an inferred trust signal for write-ahead logging (databases) — not because they're the same concept, but because they're the same principle.
+Principles enable cross-domain inference at a deeper level than shared concepts. Demonstrating understanding of acknowledgment-based reliability in TCP (networking) creates an inferred trust signal for write-ahead logging (databases). Not because they're the same concept, but because they're the same principle.
 
 This is not built yet. The schema reserves space for it via the `principles` field on concepts.
 
@@ -226,11 +226,11 @@ This is not built yet. The schema reserves space for it via the `principles` fie
 
 Domains can be created by:
 
-- **Expert curation** — a person who knows the subject defines the concepts, relationships, territories, and thresholds. Highest quality. Slowest.
-- **LLM generation** — an LLM reads documentation, textbooks, or curricula and produces a domain graph. Fast. Requires human review.
-- **Community contribution** — open-source model where anyone can submit or refine domains. Scalable. Requires quality control.
-- **Organization-specific** — a company defines domains for its internal systems, processes, and culture. These mix local concepts with portable ones.
-- **Hybrid** — LLM generates a first draft, experts refine it, community or organization contributes improvements.
+- **Expert curation**: a person who knows the subject defines the concepts, relationships, territories, and thresholds. Highest quality. Slowest.
+- **LLM generation**: an LLM reads documentation, textbooks, or curricula and produces a domain graph. Fast. Requires human review.
+- **Community contribution**: open-source model where anyone can submit or refine domains. Scalable. Requires quality control.
+- **Organization-specific**: a company defines domains for its internal systems, processes, and culture. These mix local concepts with portable ones.
+- **Hybrid**: LLM generates a first draft, experts refine it, community or organization contributes improvements.
 
 The engine validates domains against this schema on load. Invalid domains are rejected. Valid domains are loaded and ready for the trust engine to operate on.
 
@@ -493,4 +493,4 @@ Application context: the new engineer and their manager both see the trust model
 
 Note: `database-replication` has the same canonical id as in the hiring domain. If this engineer's understanding was already verified during the hiring process, that trust carries over. They don't get re-assessed on what's already demonstrated.
 
-Note: `pci-compliance-basics` is portable. If the engineer leaves Acme and joins another fintech, their verified understanding of PCI compliance carries with them. Their understanding of `acme-service-architecture` does not — it's local.
+Note: `pci-compliance-basics` is portable. If the engineer leaves Acme and joins another fintech, their verified understanding of PCI compliance carries with them. Their understanding of `acme-service-architecture` does not. It's local.

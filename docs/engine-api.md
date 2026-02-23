@@ -1,8 +1,8 @@
 # Lorraine — Engine API
 
-**Version:** 0.3 (Draft)
-**Last Updated:** February 22, 2026
-**Implements:** foundational.md v0.4
+**Version:** 0.3 (Draft)<br>
+**Last Updated:** February 22, 2026<br>
+**Implements:** foundational.md v0.4<br>
 **Architecture:** Engine Core (deterministic, no LLM) + Engine Services (LLM-powered)
 
 ---

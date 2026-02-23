@@ -1,6 +1,6 @@
-# Lorraine — Repository Structure
+# Lorraine: Repository Structure
 
-**Version:** 0.2
+**Version:** 0.2<br>
 **Last Updated:** February 22, 2026
 
 ```
@@ -187,13 +187,13 @@ Domain knowledge graphs live in `domains/` as JSON, not as application logic. Ad
 The `llm/` directory abstracts model providers. The engine services define what they need (through `llm/interface.ts`). Providers implement that interface. Switching from Claude to a local model means changing a config, not refactoring.
 
 ### 5. Apps depend on engine, never the reverse
-`apps/terrain/` imports from `engine/`. `engine/` never imports from `apps/`. This is enforced structurally — the engine doesn't know what applications exist. Each application is opinionated; the engine is not.
+`apps/terrain/` imports from `engine/`. `engine/` never imports from `apps/`. This is enforced structurally. The engine doesn't know what applications exist. Each application is opinionated; the engine is not.
 
 ### 6. SDK is the external interface
-If third parties want to build on the trust engine — submitting verification events from their own platforms, registering new domains, reading trust state — they use the `sdk/`. This is the extensibility layer discussed in the OS analogy.
+If third parties want to build on the trust engine (submitting verification events from their own platforms, registering new domains, reading trust state), they use the `sdk/`. This is the extensibility layer discussed in the OS analogy.
 
 ### 7. Tests mirror the architecture
 Engine tests run without any app. App tests run with the engine. This validates that the engine works independently.
 
 ### 8. Application-level concepts live in applications
-Territories, thresholds, goals, sessions, maps, modes, guardrails — these are Terrain concepts, not engine concepts. They live in `apps/terrain/`, not in `engine/`. Other applications (hiring, onboarding, certification) will have their own application-level concepts.
+Territories, thresholds, goals, sessions, maps, modes, guardrails: these are Terrain concepts, not engine concepts. They live in `apps/terrain/`, not in `engine/`. Other applications (hiring, onboarding, certification) will have their own application-level concepts.
