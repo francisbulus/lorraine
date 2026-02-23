@@ -2,9 +2,11 @@ import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { loadConcepts } from '../engine.js';
 import type { Store, EdgeType } from '../engine.js';
-import type { DomainPack, DomainMetadata } from '../types.js';
+import type { DomainPack, DomainMetadata, BundleDefinition } from '../types.js';
 
 const DOMAIN_META_FILE = '.mos-domains.json';
+const BUNDLES_FILE = '.mos-bundles.json';
+const MAPPINGS_FILE = '.mos-mappings.json';
 
 export function validateDomainPack(raw: unknown): { pack: DomainPack; errors: string[] } {
   const errors: string[] = [];
@@ -151,5 +153,39 @@ export function loadDomainMetadataList(dbPath: string): DomainMetadata[] {
     return JSON.parse(readFileSync(metaPath, 'utf-8'));
   } catch {
     return [];
+  }
+}
+
+export function saveBundles(dbPath: string, bundles: Record<string, BundleDefinition>): void {
+  const bundlesPath = resolve(dirname(dbPath), BUNDLES_FILE);
+  const existing = loadBundles(dbPath);
+  Object.assign(existing, bundles);
+  writeFileSync(bundlesPath, JSON.stringify(existing, null, 2), 'utf-8');
+}
+
+export function loadBundles(dbPath: string): Record<string, BundleDefinition> {
+  const bundlesPath = resolve(dirname(dbPath), BUNDLES_FILE);
+  if (!existsSync(bundlesPath)) return {};
+  try {
+    return JSON.parse(readFileSync(bundlesPath, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+export function saveMappings(dbPath: string, mappings: Record<string, { paths: string[] }>): void {
+  const mappingsPath = resolve(dirname(dbPath), MAPPINGS_FILE);
+  const existing = loadMappings(dbPath);
+  Object.assign(existing, mappings);
+  writeFileSync(mappingsPath, JSON.stringify(existing, null, 2), 'utf-8');
+}
+
+export function loadMappings(dbPath: string): Record<string, { paths: string[] }> {
+  const mappingsPath = resolve(dirname(dbPath), MAPPINGS_FILE);
+  if (!existsSync(mappingsPath)) return {};
+  try {
+    return JSON.parse(readFileSync(mappingsPath, 'utf-8'));
+  } catch {
+    return {};
   }
 }

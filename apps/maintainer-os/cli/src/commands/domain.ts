@@ -1,7 +1,7 @@
 import type { Command } from 'commander';
 import { existsSync } from 'node:fs';
 import { getStore, closeStore } from '../lib/store.js';
-import { loadDomainPack, saveDomainMetadata, loadDomainMetadataList } from '../lib/domain.js';
+import { loadDomainPack, saveDomainMetadata, loadDomainMetadataList, saveBundles, saveMappings } from '../lib/domain.js';
 import { loadConfig } from '../lib/config.js';
 
 export function registerDomainCommand(program: Command): void {
@@ -35,6 +35,12 @@ export function registerDomainCommand(program: Command): void {
 
         const config = loadConfig(configPath);
         saveDomainMetadata(config.store.path, result.pack, result.loaded, result.edgesCreated);
+        if (result.pack.bundles) {
+          saveBundles(config.store.path, result.pack.bundles);
+        }
+        if (result.pack.mappings) {
+          saveMappings(config.store.path, result.pack.mappings);
+        }
 
         console.log(`Domain loaded: ${result.pack.name ?? result.pack.id ?? opts.file}`);
         console.log(`  Concepts: ${result.loaded}`);
