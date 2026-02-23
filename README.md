@@ -103,12 +103,13 @@ A learning OS built on Lorraine. A conversational agent backed by the trust fram
 
 | Document | What it covers |
 |----------|---------------|
-| `docs/foundational.md` | The soul — invariants, defaults, trust primitive, Sekiro principle |
-| `docs/engine-api.md` | The contract — every core and services API |
-| `docs/domain-schema.md` | The content model — how domains are structured |
-| `docs/philosophy.md` | Intellectual lineage — Code, Fricker, Goldman, Fonagy |
-| `docs/why-llms.md` | Why LLMs are architecturally necessary for rich interaction |
-| `docs/auditability.md` | What the architecture lets you answer for free |
+| [`docs/how-it-works.md`](docs/how-it-works.md) | The walkthrough — what happens at each layer, with concrete examples |
+| [`docs/foundational.md`](docs/foundational.md) | The soul — invariants, defaults, trust primitive, Sekiro principle |
+| [`docs/engine-api.md`](docs/engine-api.md) | The contract — every core and services API |
+| [`docs/domain-schema.md`](docs/domain-schema.md) | The content model — how domains are structured |
+| [`docs/philosophy.md`](docs/philosophy.md) | Intellectual lineage — Code, Fricker, Goldman, Fonagy |
+| [`docs/why-llms.md`](docs/why-llms.md) | Why LLMs are architecturally necessary for rich interaction |
+| [`docs/auditability.md`](docs/auditability.md) | What the architecture lets you answer for free |
 
 ## Named after
 
