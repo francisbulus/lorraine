@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Evidence ops for codebase understanding. CLI tool for engineering teams.",
   "type": "module",
+  "imports": {
+    "#engine/*": "./engine-link/*"
+  },
   "scripts": {
     "mos": "tsx src/cli.ts",
     "test": "vitest run",
