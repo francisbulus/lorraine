@@ -388,11 +388,11 @@ interpretResponse({
   response,
   responseModality
 }) → {
-  result,             // demonstrated | failed | partial
   trustUpdates: [{
     conceptId,
+    result,          // demonstrated | failed | partial (what happened in this response)
     previousState,
-    newState,
+    newState,        // where the concept ends up after this event
     evidence
   }],
   contestedDetected,
@@ -401,7 +401,7 @@ interpretResponse({
 ```
 
 **What it does:**
-Takes a person's response and translates it into structured trust updates. These updates are then written to the core via `recordVerification`. The services layer interprets; the core records.
+Takes a person's response and translates it into structured trust updates. A single response can touch multiple concepts with different results. Each trust update carries its own result (what happened) and newState (the consequence). These updates are then written to the core via `recordVerification`. The services layer interprets; the core records.
 
 ---
 
