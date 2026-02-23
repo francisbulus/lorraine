@@ -5,6 +5,14 @@ import type { TrustLevel, TrustState, Modality } from '../engine.js';
 export const CONCEPT_COL = 24;
 export const BAR_WIDTH = 10;
 
+// Raw icon characters for each trust level
+export const LEVEL_ICONS: Record<TrustLevel, string> = {
+  verified: '✓',
+  inferred: '~',
+  contested: '⚡',
+  untested: '·',
+};
+
 export function colorForLevel(level: TrustLevel): chalk.ChalkInstance {
   switch (level) {
     case 'verified': return chalk.green;
@@ -17,12 +25,13 @@ export function colorForLevel(level: TrustLevel): chalk.ChalkInstance {
 export function colorForLevelGradient(level: TrustLevel, decayedConfidence: number): chalk.ChalkInstance {
   switch (level) {
     case 'verified':
-      if (decayedConfidence > 0.7) return chalk.greenBright;
-      if (decayedConfidence >= 0.5) return chalk.green;
-      return chalk.green.dim;
+      if (decayedConfidence > 0.7) return chalk.green;
+      if (decayedConfidence >= 0.5) return chalk.green.dim;
+      return chalk.dim;
     case 'inferred':
       if (decayedConfidence > 0.5) return chalk.yellowBright;
-      return chalk.yellow.dim;
+      if (decayedConfidence >= 0.25) return chalk.yellow.dim;
+      return chalk.dim;
     case 'contested':
       return chalk.redBright;
     case 'untested':
@@ -39,6 +48,11 @@ export function iconForLevel(level: TrustLevel): string {
   }
 }
 
+export function iconForLevelGradient(level: TrustLevel, decayedConfidence: number): string {
+  const color = colorForLevelGradient(level, decayedConfidence);
+  return color(LEVEL_ICONS[level]);
+}
+
 export function renderBar(value: number, width: number = BAR_WIDTH, colorFn?: chalk.ChalkInstance): string {
   const clamped = Math.max(0, Math.min(1, value));
   const filled = Math.round(clamped * width);
@@ -53,6 +67,15 @@ export function renderHeader(label: string, value: string): string {
 
 export function renderSeparator(width: number = 50): string {
   return `  ${'─'.repeat(width)}`;
+}
+
+export function computeConceptWidth(names: string[]): number {
+  if (names.length === 0) return CONCEPT_COL;
+  return Math.max(CONCEPT_COL, ...names.map((n) => n.length)) + 2;
+}
+
+export function padName(name: string, width: number): string {
+  return name.padEnd(width);
 }
 
 export function formatConfidence(confidence: number): string {
@@ -94,9 +117,9 @@ export function groupByLevel(states: TrustState[]): GroupedTrustStates {
     groups[state.level].push(state);
   }
 
-  // Sort within groups: by confidence descending
+  // Sort within groups: by decayed confidence descending
   for (const level of ['verified', 'inferred', 'contested'] as const) {
-    groups[level].sort((a, b) => b.confidence - a.confidence);
+    groups[level].sort((a, b) => b.decayedConfidence - a.decayedConfidence);
   }
 
   return groups;

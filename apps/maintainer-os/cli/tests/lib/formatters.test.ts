@@ -7,6 +7,10 @@ import {
   renderBar,
   renderHeader,
   renderSeparator,
+  computeConceptWidth,
+  padName,
+  iconForLevelGradient,
+  CONCEPT_COL,
 } from '../../src/lib/formatters.js';
 
 function stripAnsi(str: string): string {
@@ -44,10 +48,10 @@ describe('groupByLevel', () => {
     expect(groups.untested).toHaveLength(1);
   });
 
-  it('sorts verified by confidence descending', () => {
+  it('sorts by decayed confidence descending', () => {
     const states = [
-      makeTrustState({ conceptId: 'low', level: 'verified', confidence: 0.5 }),
-      makeTrustState({ conceptId: 'high', level: 'verified', confidence: 0.9 }),
+      makeTrustState({ conceptId: 'low', level: 'verified', confidence: 0.5, decayedConfidence: 0.45 }),
+      makeTrustState({ conceptId: 'high', level: 'verified', confidence: 0.9, decayedConfidence: 0.85 }),
     ];
     const groups = groupByLevel(states);
     expect(groups.verified[0]!.conceptId).toBe('high');
@@ -143,5 +147,40 @@ describe('renderSeparator', () => {
   it('renders a separator line with custom width', () => {
     const sep = renderSeparator(10);
     expect(sep).toBe('  ──────────');
+  });
+});
+
+describe('computeConceptWidth', () => {
+  it('returns CONCEPT_COL for empty list', () => {
+    expect(computeConceptWidth([])).toBe(CONCEPT_COL);
+  });
+
+  it('returns CONCEPT_COL + 2 when names are shorter', () => {
+    expect(computeConceptWidth(['abc', 'def'])).toBe(CONCEPT_COL + 2);
+  });
+
+  it('returns longest name + 2 when longer than CONCEPT_COL', () => {
+    const longName = 'a'.repeat(CONCEPT_COL + 5);
+    expect(computeConceptWidth([longName, 'short'])).toBe(longName.length + 2);
+  });
+});
+
+describe('padName', () => {
+  it('pads name to specified width', () => {
+    expect(padName('abc', 10)).toBe('abc       ');
+    expect(padName('abc', 10).length).toBe(10);
+  });
+
+  it('does not truncate names longer than width', () => {
+    expect(padName('abcdef', 3)).toBe('abcdef');
+  });
+});
+
+describe('iconForLevelGradient', () => {
+  it('returns icon character for each level', () => {
+    expect(stripAnsi(iconForLevelGradient('verified', 0.8))).toBe('✓');
+    expect(stripAnsi(iconForLevelGradient('inferred', 0.5))).toBe('~');
+    expect(stripAnsi(iconForLevelGradient('contested', 0.6))).toBe('⚡');
+    expect(stripAnsi(iconForLevelGradient('untested', 0))).toBe('·');
   });
 });

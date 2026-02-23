@@ -12,7 +12,8 @@ import {
   renderSeparator,
   formatConfidence,
   formatTimeAgo,
-  CONCEPT_COL,
+  computeConceptWidth,
+  padName,
   BAR_WIDTH,
 } from '../lib/formatters.js';
 
@@ -60,6 +61,8 @@ export function registerReviewersCommand(program: Command): void {
 }
 
 function printReviewerTable(conceptIds: string[], scores: ReviewerScore[]): void {
+  const conceptWidth = computeConceptWidth(conceptIds);
+
   console.log(renderHeader('Reviewers', conceptIds.join(', ')));
   console.log(renderSeparator());
   console.log('');
@@ -82,7 +85,7 @@ function printReviewerTable(conceptIds: string[], scores: ReviewerScore[]): void
       const conf = formatConfidence(cs.decayedConfidence);
       const time = cs.lastVerified ? formatTimeAgo(cs.lastVerified) : '';
       const levelTime = time ? `${cs.level} · ${time}` : cs.level;
-      console.log(`     ${cs.conceptId.padEnd(CONCEPT_COL)} ${bar} ${conf}   ${chalk.dim(levelTime)}`);
+      console.log(`     ${color(padName(cs.conceptId, conceptWidth))} ${bar} ${conf}   ${chalk.dim(levelTime)}`);
     }
     console.log('');
   }

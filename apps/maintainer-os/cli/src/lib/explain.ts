@@ -1,6 +1,6 @@
 import chalk from 'chalk';
 import { getTrustState, getGraph, explainDecision } from '../engine.js';
-import type { Store, TrustState, VerificationEvent, ClaimEvent } from '../engine.js';
+import type { Store, TrustState, TrustLevel, VerificationEvent, ClaimEvent } from '../engine.js';
 import {
   colorForLevel,
   colorForLevelGradient,
@@ -9,12 +9,14 @@ import {
   renderSeparator,
   formatConfidence,
   formatTimeAgo,
-  CONCEPT_COL,
+  computeConceptWidth,
+  padName,
   BAR_WIDTH,
 } from './formatters.js';
 
 export interface InferenceInfo {
   conceptId: string;
+  level: TrustLevel;
   decayedConfidence: number;
   edgeType: string;
   inferenceStrength: number;
@@ -44,6 +46,7 @@ export function buildExplanation(store: Store, personId: string, conceptId: stri
         const targetState = getTrustState(store, { personId, conceptId: edge.to });
         inferences.push({
           conceptId: edge.to,
+          level: targetState.level,
           decayedConfidence: targetState.decayedConfidence,
           edgeType: edge.type,
           inferenceStrength: edge.inferenceStrength,
@@ -109,12 +112,13 @@ export function formatExplanation(data: ExplanationData): string {
 
   // Downstream inferences from this concept
   if (data.inferences.length > 0) {
+    const infWidth = computeConceptWidth(data.inferences.map((inf) => inf.conceptId));
     lines.push(`  ${chalk.bold('Inferences from this concept:')}`);
     for (const inf of data.inferences) {
-      const infColor = colorForLevelGradient('inferred', inf.decayedConfidence);
+      const infColor = colorForLevelGradient(inf.level, inf.decayedConfidence);
       const bar = renderBar(inf.decayedConfidence, BAR_WIDTH, infColor);
       const conf = formatConfidence(inf.decayedConfidence);
-      lines.push(`    → ${inf.conceptId.padEnd(CONCEPT_COL)} ${bar} ${conf}   ${inf.edgeType} (${inf.inferenceStrength})`);
+      lines.push(`    → ${infColor(padName(inf.conceptId, infWidth))} ${bar} ${conf}   ${inf.edgeType} (${inf.inferenceStrength})`);
     }
     lines.push('');
   }

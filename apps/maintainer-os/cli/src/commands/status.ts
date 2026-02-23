@@ -5,7 +5,7 @@ import type { TrustState } from '../engine.js';
 import { getStore, closeStore } from '../lib/store.js';
 import {
   groupByLevel,
-  iconForLevel,
+  iconForLevelGradient,
   colorForLevelGradient,
   renderBar,
   renderHeader,
@@ -14,7 +14,8 @@ import {
   formatTimeAgo,
   formatModalities,
   summarizeConflict,
-  CONCEPT_COL,
+  computeConceptWidth,
+  padName,
   BAR_WIDTH,
 } from '../lib/formatters.js';
 
@@ -51,17 +52,18 @@ export function registerStatusCommand(program: Command): void {
 
 function printStatusTable(person: string, states: TrustState[]): void {
   const groups = groupByLevel(states);
+  const conceptWidth = computeConceptWidth(states.map((s) => s.conceptId));
 
   console.log(renderHeader('Trust Map', person));
   console.log(`  ${chalk.dim('Last updated: just now')}`);
   console.log(renderSeparator());
-  console.log('');
 
   const levels = ['verified', 'inferred', 'contested', 'untested'] as const;
   for (const level of levels) {
     const group = groups[level];
     if (group.length === 0) continue;
 
+    console.log('');
     const sectionColor = level === 'verified' ? chalk.green.bold
       : level === 'inferred' ? chalk.yellow.bold
       : level === 'contested' ? chalk.redBright.bold
@@ -69,22 +71,22 @@ function printStatusTable(person: string, states: TrustState[]): void {
     console.log(`  ${sectionColor(level.toUpperCase())}`);
 
     for (const s of group) {
-      const icon = iconForLevel(s.level);
-      const name = s.conceptId.padEnd(CONCEPT_COL);
+      const color = colorForLevelGradient(s.level, s.decayedConfidence);
+      const icon = iconForLevelGradient(s.level, s.decayedConfidence);
+      const name = color(padName(s.conceptId, conceptWidth));
+      const bar = renderBar(s.decayedConfidence, BAR_WIDTH, color);
 
       if (s.level === 'untested') {
-        console.log(`    ${icon} ${name}`);
+        console.log(`    ${icon} ${name} ${bar}`);
       } else {
-        const color = colorForLevelGradient(s.level, s.decayedConfidence);
-        const bar = renderBar(s.decayedConfidence, BAR_WIDTH, color);
         const conf = formatConfidence(s.decayedConfidence);
 
         let extras = '';
         if (s.level === 'verified') {
           const time = s.lastVerified ? formatTimeAgo(s.lastVerified) : '';
-          extras = `${chalk.dim(time)}   ${chalk.dim(formatModalities(s.modalitiesTested))}`;
+          extras = `${chalk.dim(time)}  ${chalk.dim(formatModalities(s.modalitiesTested))}`;
         } else if (s.level === 'inferred') {
-          extras = `inferred from ${s.inferredFrom.join(', ')}`;
+          extras = `from ${s.inferredFrom.join(', ')}`;
         } else if (s.level === 'contested') {
           extras = summarizeConflict(s);
         }
@@ -92,9 +94,9 @@ function printStatusTable(person: string, states: TrustState[]): void {
         console.log(`    ${icon} ${name} ${bar} ${conf}  ${extras}`);
       }
     }
-    console.log('');
   }
 
+  console.log('');
   console.log(renderSeparator());
   const calData = getCalibrationData(states);
   if (calData) {

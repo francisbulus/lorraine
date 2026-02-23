@@ -6,13 +6,14 @@ import { loadBundles } from '../lib/domain.js';
 import { evaluateReadiness } from '../lib/role-gates.js';
 import type { ReadinessResult } from '../lib/role-gates.js';
 import {
-  iconForLevel,
+  iconForLevelGradient,
   colorForLevelGradient,
   renderBar,
   renderHeader,
   renderSeparator,
   formatConfidence,
-  CONCEPT_COL,
+  computeConceptWidth,
+  padName,
   BAR_WIDTH,
 } from '../lib/formatters.js';
 import { EXIT_POLICY_UNMET, EXIT_CONFIG_ERROR } from '../types.js';
@@ -72,21 +73,26 @@ export function registerReadyCommand(program: Command): void {
 }
 
 function printReadinessTable(result: ReadinessResult): void {
+  const conceptWidth = computeConceptWidth(result.gates.map((g) => g.requirement.concept));
+
   console.log(renderHeader('Readiness', `${result.person} → ${result.bundle}`));
   console.log(renderSeparator());
   console.log('');
 
   for (const gate of result.gates) {
-    const icon = gate.passed
-      ? iconForLevel(gate.state.level)
+    const passed = gate.passed;
+    const color = passed
+      ? colorForLevelGradient(gate.state.level, gate.state.decayedConfidence)
+      : chalk.red;
+    const icon = passed
+      ? iconForLevelGradient(gate.state.level, gate.state.decayedConfidence)
       : chalk.red('✗');
-    const name = gate.requirement.concept.padEnd(CONCEPT_COL);
-    const color = colorForLevelGradient(gate.state.level, gate.state.decayedConfidence);
+    const name = color(padName(gate.requirement.concept, conceptWidth));
     const bar = renderBar(gate.state.decayedConfidence, BAR_WIDTH, color);
     const conf = formatConfidence(gate.state.decayedConfidence);
-    const status = gate.passed ? chalk.green('PASS') : chalk.red('BLOCK');
+    const status = passed ? chalk.green('PASS') : chalk.red('BLOCK');
     const gateType = gate.requirement.minLevel === 'verified' ? 'hard' : 'soft';
-    const gateLabel = gate.passed
+    const gateLabel = passed
       ? chalk.dim(`[${gateType}]`)
       : chalk.dim(`[${gateType} · ${gate.state.level}]`);
 
@@ -99,5 +105,12 @@ function printReadinessTable(result: ReadinessResult): void {
     console.log(renderHeader('Result', `${chalk.green.bold('READY')} · ${result.passedCount} of ${result.totalCount} met`));
   } else {
     console.log(renderHeader('Result', `${chalk.red.bold('NOT READY')} · ${result.passedCount} of ${result.totalCount} met`));
+    console.log('');
+    console.log(`  ${chalk.bold('Next steps:')}`);
+    for (const gate of result.gates) {
+      if (!gate.passed) {
+        console.log(`    mos challenge --person ${result.person} --concept ${gate.requirement.concept}`);
+      }
+    }
   }
 }
