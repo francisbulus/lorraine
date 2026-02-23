@@ -1,6 +1,8 @@
 import type { Command } from 'commander';
 import { existsSync } from 'node:fs';
 import { getStore, closeStore } from '../lib/store.js';
+import { loadConfig } from '../lib/config.js';
+import { addPeople } from '../lib/domain.js';
 import { ingestEventsFromFile } from '../lib/ingest.js';
 import { EXIT_UPSTREAM_ERROR } from '../types.js';
 
@@ -42,6 +44,12 @@ export function registerIngestCommand(program: Command): void {
           console.log(`  Skipped: ${result.skipped}`);
         }
         console.log(`  Concepts affected: ${result.conceptsAffected.size}`);
+
+        // Track people for reviewer scoring
+        if (result.peopleAffected.size > 0) {
+          const config = loadConfig(configPath);
+          addPeople(config.store.path, [...result.peopleAffected]);
+        }
       } catch (err) {
         console.error(`Ingest failed: ${err instanceof Error ? err.message : String(err)}`);
         process.exit(EXIT_UPSTREAM_ERROR);

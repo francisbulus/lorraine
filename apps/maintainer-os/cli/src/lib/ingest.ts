@@ -31,6 +31,7 @@ export interface IngestResult {
   skipped: number;
   errors: string[];
   conceptsAffected: Set<string>;
+  peopleAffected: Set<string>;
 }
 
 export function ingestEventsFromFile(store: Store, filePath: string): IngestResult {
@@ -68,6 +69,7 @@ function ingestEvents(store: Store, events: RawEvent[]): IngestResult {
     skipped: 0,
     errors: [],
     conceptsAffected: new Set(),
+    peopleAffected: new Set(),
   };
 
   for (const [i, event] of events.entries()) {
@@ -119,6 +121,7 @@ function ingestEvents(store: Store, events: RawEvent[]): IngestResult {
       }
 
       result.conceptsAffected.add(event.conceptId!);
+      result.peopleAffected.add(event.personId!);
       result.processed++;
     } catch (err) {
       result.errors.push(`Event ${i}: ${err instanceof Error ? err.message : String(err)}`);

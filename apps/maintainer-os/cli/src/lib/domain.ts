@@ -7,6 +7,7 @@ import type { DomainPack, DomainMetadata, BundleDefinition } from '../types.js';
 const DOMAIN_META_FILE = '.mos-domains.json';
 const BUNDLES_FILE = '.mos-bundles.json';
 const MAPPINGS_FILE = '.mos-mappings.json';
+const PEOPLE_FILE = '.mos-people.json';
 
 export function validateDomainPack(raw: unknown): { pack: DomainPack; errors: string[] } {
   const errors: string[] = [];
@@ -187,5 +188,22 @@ export function loadMappings(dbPath: string): Record<string, { paths: string[] }
     return JSON.parse(readFileSync(mappingsPath, 'utf-8'));
   } catch {
     return {};
+  }
+}
+
+export function addPeople(dbPath: string, personIds: string[]): void {
+  const peoplePath = resolve(dirname(dbPath), PEOPLE_FILE);
+  const existing = loadPeople(dbPath);
+  const merged = new Set([...existing, ...personIds]);
+  writeFileSync(peoplePath, JSON.stringify([...merged], null, 2), 'utf-8');
+}
+
+export function loadPeople(dbPath: string): string[] {
+  const peoplePath = resolve(dirname(dbPath), PEOPLE_FILE);
+  if (!existsSync(peoplePath)) return [];
+  try {
+    return JSON.parse(readFileSync(peoplePath, 'utf-8'));
+  } catch {
+    return [];
   }
 }
