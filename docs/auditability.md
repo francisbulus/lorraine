@@ -1,4 +1,4 @@
-# Lorraine — Auditability & Introspection
+# Lorraine: Auditability & Introspection
 
 **Version:** 0.2<br>
 **Last Updated:** February 22, 2026
@@ -7,18 +7,18 @@
 
 ## What the Architecture Gives You
 
-Lorraine is auditable and self-aware by construction. This is not a feature — it's a structural consequence of two engine invariants:
+Lorraine is auditable and self-aware by construction. This is not a feature. It's a structural consequence of two framework invariants:
 
 - **Invariant 6:** Trust state is derived from events, not stored directly. Every trust claim is recomputable from the event log.
 - **Invariant 3:** Every trust claim is transparent and challengeable. The person being modeled can always ask "why" and get a traceable answer.
 
 An event-sourced system with mandatory provenance, no manual overrides, and self-calibration produces three properties for free:
 
-**Auditability** — every trust claim traces backward through evidence to the verification events that produced it. The event log is append-only. Corrections are retractions, not deletions. The trail is never incomplete.
+**Auditability**: every trust claim traces backward through evidence to the verification events that produced it. The event log is append-only. Corrections are retractions, not deletions. The trail is never incomplete.
 
-**Introspection** — the engine watches itself via `calibrate`. It knows when its predictions are wrong, when its model is stale, when it's surprised by outcomes. It reports its own accuracy.
+**Introspection**: the framework watches itself via `calibrate`. It knows when its predictions are wrong, when its model is stale, when it's surprised by outcomes. It reports its own accuracy.
 
-**Provenance** — every piece of trust state has a chain: this trust level came from these verification events, propagated through these edges, decayed over this time period, informed by these claim events. `explainDecision` exposes the full chain.
+**Provenance**: every piece of trust state has a chain: this trust level came from these verification events, propagated through these edges, decayed over this time period, informed by these claim events. `explainDecision` exposes the full chain.
 
 Applications build monitoring, dashboards, analytics, and compliance reporting on top of these properties. The raw material is in the data model itself.
 
@@ -39,7 +39,7 @@ Applications build monitoring, dashboards, analytics, and compliance reporting o
 | Where are they stuck? | Contested concepts — demonstrated in one context, failed in another |
 | How has their understanding changed over time? | Event log — append-only, ordered by timestamp, replayable |
 
-### About the engine's model quality
+### About the framework's model quality
 
 | Question | How to answer it |
 |----------|-----------------|
@@ -94,11 +94,11 @@ Retracted events remain in the trail, marked as retracted with reason. The trail
 
 **For the person being modeled:** Full transparency. "Why do you think I know this?" has a real, traceable answer. They can challenge any trust claim and see the evidence chain. This is Invariant 3 made operational.
 
-**For application developers:** Debugging. When the trust model behaves unexpectedly, you can trace exactly why — which events led to which state through which propagation path. No black box.
+**For application developers:** Debugging. When the trust model behaves unexpectedly, you can trace exactly why: which events led to which state through which propagation path. No black box.
 
-**For domain authors:** Feedback. Aggregate observability across people reveals where the domain graph is wrong — concepts that are always contested, thresholds that nobody passes, territories with uniform failure patterns.
+**For domain authors:** Feedback. Aggregate data across people reveals where the domain graph is wrong: concepts that are always contested, thresholds that nobody passes, territories with uniform failure patterns.
 
-**For the engine itself:** Self-improvement. `calibrate` is the engine watching itself. When its predictions diverge from outcomes, it knows, and it says so. This is Invariant 3 applied reflexively — the engine's reasoning about its own accuracy is also transparent.
+**For the framework itself:** Self-improvement. `calibrate` is the framework watching itself. When its predictions diverge from outcomes, it knows, and it says so. This is Invariant 3 applied reflexively. The framework's reasoning about its own accuracy is also transparent.
 
 ---
 
@@ -106,6 +106,6 @@ Retracted events remain in the trail, marked as retracted with reason. The trail
 
 This is not a monitoring system. There are no dashboards, no alerts, no metrics pipelines. Those can be built by applications that need them.
 
-This is the raw material. The engine produces a complete, provenance-rich, append-only event log with self-calibration. Applications decide how to surface it — as a timeline, as analytics, as a health dashboard, as a compliance audit, as a learner-facing self-calibration view.
+This is the raw material. The framework produces a complete, provenance-rich, append-only event log with self-calibration. Applications decide how to surface it: as a timeline, as analytics, as a health dashboard, as a compliance audit, as a person-facing self-calibration view.
 
-The observability is in the data. Applications choose the lens.
+The auditability is in the data. Applications choose the lens.
