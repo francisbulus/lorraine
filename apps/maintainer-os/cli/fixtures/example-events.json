@@ -1,0 +1,88 @@
+[
+  {
+    "type": "verification",
+    "conceptId": "rollback-strategy",
+    "personId": "alice",
+    "modality": "external:observed",
+    "result": "demonstrated",
+    "context": "Rolled back deployment v2.4.7 during INC-4821",
+    "source": "external",
+    "timestamp": "2026-02-20T14:30:00Z"
+  },
+  {
+    "type": "verification",
+    "conceptId": "incident-triage",
+    "personId": "alice",
+    "modality": "grill:transfer",
+    "result": "demonstrated",
+    "context": "Correctly prioritized INC-4821 as P1, identified blast radius",
+    "source": "internal",
+    "timestamp": "2026-02-18T10:00:00Z"
+  },
+  {
+    "type": "verification",
+    "conceptId": "log-analysis",
+    "personId": "alice",
+    "modality": "grill:transfer",
+    "result": "demonstrated",
+    "context": "Correctly described log query strategy for cross-service correlation",
+    "source": "internal",
+    "timestamp": "2026-02-12T09:00:00Z"
+  },
+  {
+    "type": "verification",
+    "conceptId": "log-analysis",
+    "personId": "alice",
+    "modality": "external:observed",
+    "result": "partial",
+    "context": "Postmortem for INC-4821: log analysis section flagged as insufficient",
+    "source": "external",
+    "timestamp": "2026-02-18T16:00:00Z"
+  },
+  {
+    "type": "verification",
+    "conceptId": "auth-boundaries",
+    "personId": "bob",
+    "modality": "external:observed",
+    "result": "demonstrated",
+    "context": "PR #312: refactored auth middleware, comprehensive test coverage",
+    "source": "external",
+    "timestamp": "2026-02-19T11:00:00Z"
+  },
+  {
+    "type": "verification",
+    "conceptId": "cache-coherency",
+    "personId": "bob",
+    "modality": "external:observed",
+    "result": "demonstrated",
+    "context": "PR #298: fixed cache invalidation race condition",
+    "source": "external",
+    "timestamp": "2026-02-15T14:00:00Z"
+  },
+  {
+    "type": "verification",
+    "conceptId": "migration-safety",
+    "personId": "alice",
+    "modality": "external:observed",
+    "result": "demonstrated",
+    "context": "Migration M-047: zero-downtime schema change with rollback plan",
+    "source": "external",
+    "timestamp": "2026-02-10T09:00:00Z"
+  },
+  {
+    "type": "claim",
+    "conceptId": "log-analysis",
+    "personId": "alice",
+    "selfReportedConfidence": 0.7,
+    "context": "Team self-assessment survey",
+    "timestamp": "2026-02-15T10:00:00Z"
+  },
+  {
+    "type": "claim",
+    "conceptId": "event-bus-semantics",
+    "personId": "alice",
+    "selfReportedConfidence": 0.5,
+    "context": "Team self-assessment survey",
+    "timestamp": "2026-02-15T10:00:00Z"
+  }
+]
