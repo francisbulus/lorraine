@@ -47,6 +47,8 @@ mos calibrate --person alice
 
 **`mos ready`** evaluates a person against a capability bundle (like `release-captain`) and returns PASS/BLOCK per concept with hard/soft gate labels.
 
+<img src="docs/assets/ready-command.png" alt="mos ready output" width="480">
+
 **`mos reviewers`** ranks people by verified and inferred trust across a set of concepts. Useful for PR reviewer assignment.
 
 **`mos why`** prints the full evidence chain for a trust decision: verification events, timestamps, modalities, inference edges, and calibration gaps.
