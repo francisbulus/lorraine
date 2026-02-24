@@ -16,6 +16,7 @@ import {
   summarizeConflict,
   computeConceptWidth,
   padName,
+  titleCase,
   BAR_WIDTH,
 } from '../lib/formatters.js';
 
@@ -105,7 +106,7 @@ function printStatusTable(person: string, states: TrustState[]): void {
     ? `Calibration: ${calData.accuracy}% · ${calData.stalePercent}% stale`
     : 'Last updated: just now';
 
-  const frame = renderFrame('Trust Map', person, contentLines, footer);
+  const frame = renderFrame('Trust Map', titleCase(person), contentLines, footer);
   for (const line of frame) {
     console.log(line);
   }

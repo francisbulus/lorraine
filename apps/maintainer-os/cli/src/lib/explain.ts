@@ -12,6 +12,7 @@ import {
   formatTimeAgo,
   computeConceptWidth,
   padName,
+  titleCase,
   BAR_WIDTH,
 } from './formatters.js';
 
@@ -67,7 +68,7 @@ export function formatExplanation(data: ExplanationData): string {
   const contentLines: string[] = [];
 
   // Level and confidence header
-  contentLines.push(`Level: ${color(state.level)}`);
+  contentLines.push(`Level: ${color(state.level.toUpperCase())}`);
   if (state.confidence !== state.decayedConfidence) {
     contentLines.push(`Confidence: ${formatConfidence(state.confidence)} → ${formatConfidence(state.decayedConfidence)} (after decay)`);
   } else {
@@ -175,7 +176,7 @@ export function formatExplanation(data: ExplanationData): string {
 
   contentLines.push('');
 
-  const frame = renderFrame('Explanation', `${data.person} → ${data.concept}`, contentLines);
+  const frame = renderFrame('Explanation', `${titleCase(data.person)} → ${titleCase(data.concept)}`, contentLines);
   return frame.join('\n');
 }
 

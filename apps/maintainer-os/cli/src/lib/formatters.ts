@@ -329,6 +329,10 @@ export function formatCalibrationSummary(states: TrustState[]): string | null {
   return `Calibration: ${accuracy}% prediction accuracy, ${stalePercent}% stale`;
 }
 
+export function titleCase(str: string): string {
+  return str.replace(/(?:^|[\s\-])(\w)/g, (_, c) => _.slice(0, -1) + c.toUpperCase());
+}
+
 export function isStale(timestamp: number | null): boolean {
   if (!timestamp) return false;
   return (Date.now() - timestamp) > 60 * 24 * 60 * 60 * 1000;

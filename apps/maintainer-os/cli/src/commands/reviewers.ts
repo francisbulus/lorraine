@@ -16,6 +16,7 @@ import {
   computeConceptWidth,
   padName,
   isStale,
+  titleCase,
   BAR_WIDTH,
 } from '../lib/formatters.js';
 
@@ -99,7 +100,7 @@ function printReviewerTable(conceptIds: string[], scores: ReviewerScore[]): void
   contentLines.push('');
 
   const footer = 'Detail: mos why --person <name> --concept <c>';
-  const frame = renderFrame('Reviewers', conceptIds.join(', '), contentLines, footer);
+  const frame = renderFrame('Reviewers', conceptIds.map(titleCase).join(', '), contentLines, footer);
   for (const line of frame) {
     console.log(line);
   }

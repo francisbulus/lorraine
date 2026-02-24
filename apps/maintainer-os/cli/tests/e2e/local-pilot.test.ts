@@ -59,7 +59,7 @@ describe('Phase 1 local pilot loop', () => {
     const status = mos(['status', '--person', 'alice']);
     expect(status.exitCode).toBe(0);
     expect(status.stdout).toContain('Trust Map');
-    expect(status.stdout).toContain('alice');
+    expect(status.stdout).toContain('Alice');
 
     // 6. Status JSON format
     const statusJson = mos(['--format', 'json', 'status', '--person', 'alice']);
@@ -82,7 +82,7 @@ describe('Phase 1 local pilot loop', () => {
     const why = mos(['why', '--person', 'alice', '--concept', 'rollback-strategy']);
     expect(why.exitCode).toBe(0);
     expect(why.stdout).toContain('Explanation');
-    expect(why.stdout).toContain('rollback-strategy');
+    expect(why.stdout).toContain('Rollback-Strategy');
 
     // 10. Why JSON format
     const whyJson = mos(['--format', 'json', 'why', '--person', 'alice', '--concept', 'rollback-strategy']);

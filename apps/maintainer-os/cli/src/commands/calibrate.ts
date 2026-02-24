@@ -9,6 +9,7 @@ import {
   renderFrame,
   renderInnerSeparator,
   renderPositionMarker,
+  titleCase,
   BAR_WIDTH,
 } from '../lib/formatters.js';
 
@@ -107,7 +108,7 @@ function printCalibration(person: string, result: CalibrateResult): void {
   contentLines.push(`${chalk.dim('ℹ')} ${result.recommendation}`);
   contentLines.push('');
 
-  const frame = renderFrame('Calibration', person, contentLines);
+  const frame = renderFrame('Calibration', titleCase(person), contentLines);
   for (const line of frame) {
     console.log(line);
   }

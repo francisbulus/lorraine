@@ -16,6 +16,7 @@ import {
   formatConfidence,
   computeConceptWidth,
   padName,
+  titleCase,
   BAR_WIDTH,
 } from '../lib/formatters.js';
 import { EXIT_POLICY_UNMET, EXIT_CONFIG_ERROR } from '../types.js';
@@ -110,7 +111,7 @@ function printReadinessTable(result: ReadinessResult): void {
     contentLines.push('');
 
     // Render the frame up to here, then the double-frame blockers break out
-    const frameLines = renderFrame('Readiness', `${result.person} → ${result.bundle}`, contentLines);
+    const frameLines = renderFrame('Readiness', `${titleCase(result.person)} → ${titleCase(result.bundle)}`, contentLines);
     for (const line of frameLines.slice(0, -1)) { // omit closing border
       console.log(line);
     }
@@ -165,7 +166,7 @@ function printReadinessTable(result: ReadinessResult): void {
     contentLines.push(renderDoubleBand(50));
     contentLines.push('');
 
-    const frame = renderFrame('Readiness', `${result.person} → ${result.bundle}`, contentLines);
+    const frame = renderFrame('Readiness', `${titleCase(result.person)} → ${titleCase(result.bundle)}`, contentLines);
     for (const line of frame) {
       console.log(line);
     }
