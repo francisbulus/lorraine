@@ -8,8 +8,8 @@ import {
   iconForLevelGradient,
   colorForLevelGradient,
   renderBar,
-  renderHeader,
-  renderSeparator,
+  renderFrame,
+  renderInnerSeparator,
   formatConfidence,
   formatTimeAgo,
   formatModalities,
@@ -53,54 +53,77 @@ export function registerStatusCommand(program: Command): void {
 function printStatusTable(person: string, states: TrustState[]): void {
   const groups = groupByLevel(states);
   const conceptWidth = computeConceptWidth(states.map((s) => s.conceptId));
-
-  console.log(renderHeader('Trust Map', person));
-  console.log(`  ${chalk.dim('Last updated: just now')}`);
-  console.log(renderSeparator());
+  const contentLines: string[] = [];
 
   const levels = ['verified', 'inferred', 'contested', 'untested'] as const;
+  let firstSection = true;
+
   for (const level of levels) {
     const group = groups[level];
     if (group.length === 0) continue;
 
-    console.log('');
+    if (!firstSection) {
+      contentLines.push('');
+      contentLines.push(renderInnerSeparator());
+    }
+    firstSection = false;
+
+    contentLines.push('');
     const sectionColor = level === 'verified' ? chalk.green.bold
       : level === 'inferred' ? chalk.yellow.bold
       : level === 'contested' ? chalk.redBright.bold
       : chalk.dim.bold;
-    console.log(`  ${sectionColor(level.toUpperCase())}`);
+    contentLines.push(sectionColor(level.toUpperCase()));
 
     for (const s of group) {
+      contentLines.push('');
       const color = colorForLevelGradient(s.level, s.decayedConfidence);
       const icon = iconForLevelGradient(s.level, s.decayedConfidence);
       const name = color(padName(s.conceptId, conceptWidth));
       const bar = renderBar(s.decayedConfidence, BAR_WIDTH, color);
 
       if (s.level === 'untested') {
-        console.log(`    ${icon} ${name} ${bar}`);
+        contentLines.push(`  ${icon} ${name} ${bar}`);
       } else {
         const conf = formatConfidence(s.decayedConfidence);
+        contentLines.push(`  ${icon} ${name} ${bar}  ${conf}`);
+      }
 
-        let extras = '';
-        if (s.level === 'verified') {
-          const time = s.lastVerified ? formatTimeAgo(s.lastVerified) : '';
-          extras = `${chalk.dim(time)}  ${chalk.dim(formatModalities(s.modalitiesTested))}`;
-        } else if (s.level === 'inferred') {
-          extras = `from ${s.inferredFrom.join(', ')}`;
-        } else if (s.level === 'contested') {
-          extras = summarizeConflict(s);
-        }
-
-        console.log(`    ${icon} ${name} ${bar} ${conf}  ${extras}`);
+      // Detail line
+      const detail = buildDetailLine(s);
+      if (detail) {
+        contentLines.push(`    ${chalk.dim(detail)}`);
       }
     }
   }
 
-  console.log('');
-  console.log(renderSeparator());
+  contentLines.push('');
+
+  // Build footer
   const calData = getCalibrationData(states);
-  if (calData) {
-    console.log(renderHeader('Calibration', `${calData.accuracy}% accuracy · ${calData.stalePercent}% stale`));
+  const footer = calData
+    ? `Calibration: ${calData.accuracy}% · ${calData.stalePercent}% stale`
+    : 'Last updated: just now';
+
+  const frame = renderFrame('Trust Map', person, contentLines, footer);
+  for (const line of frame) {
+    console.log(line);
+  }
+}
+
+function buildDetailLine(s: TrustState): string {
+  switch (s.level) {
+    case 'verified': {
+      const time = s.lastVerified ? formatTimeAgo(s.lastVerified) : '';
+      const mods = formatModalities(s.modalitiesTested);
+      return [time, mods].filter(Boolean).join(' · ');
+    }
+    case 'inferred':
+      return `from ${s.inferredFrom.join(', ')}`;
+    case 'contested':
+      return summarizeConflict(s);
+    case 'untested':
+      return '';
   }
 }
 

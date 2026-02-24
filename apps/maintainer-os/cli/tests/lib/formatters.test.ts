@@ -10,12 +10,17 @@ import {
   computeConceptWidth,
   padName,
   iconForLevelGradient,
+  renderFrame,
+  renderDoubleFrame,
+  renderPositionMarker,
+  renderReviewerHeader,
+  renderInnerSeparator,
+  renderDoubleBand,
+  renderCalibrationLine,
+  isStale,
+  stripAnsi,
   CONCEPT_COL,
 } from '../../src/lib/formatters.js';
-
-function stripAnsi(str: string): string {
-  return str.replace(/\u001b\[[0-9;]*m/g, '');
-}
 
 function makeTrustState(overrides: Partial<TrustState> & { conceptId: string; level: TrustState['level'] }): TrustState {
   return {
@@ -182,5 +187,144 @@ describe('iconForLevelGradient', () => {
     expect(stripAnsi(iconForLevelGradient('inferred', 0.5))).toBe('~');
     expect(stripAnsi(iconForLevelGradient('contested', 0.6))).toBe('⚡');
     expect(stripAnsi(iconForLevelGradient('untested', 0))).toBe('·');
+  });
+});
+
+describe('renderFrame', () => {
+  it('creates a box-drawing frame with title and subject', () => {
+    const lines = renderFrame('Test', 'subject', ['content']);
+    const stripped = lines.map(stripAnsi);
+    expect(stripped[0]).toContain('┌');
+    expect(stripped[0]).toContain('Test');
+    expect(stripped[0]).toContain('subject');
+    expect(stripped[0]).toContain('┐');
+    expect(stripped[stripped.length - 1]).toContain('└');
+    expect(stripped[stripped.length - 1]).toContain('┘');
+  });
+
+  it('includes content lines with frame borders', () => {
+    const lines = renderFrame('T', 'S', ['hello', 'world']);
+    const stripped = lines.map(stripAnsi);
+    const contentLines = stripped.filter((l) => l.includes('│'));
+    expect(contentLines.some((l) => l.includes('hello'))).toBe(true);
+    expect(contentLines.some((l) => l.includes('world'))).toBe(true);
+  });
+
+  it('includes footer in bottom border', () => {
+    const lines = renderFrame('T', 'S', ['content'], 'my footer');
+    const stripped = lines.map(stripAnsi);
+    const bottom = stripped[stripped.length - 1];
+    expect(bottom).toContain('my footer');
+    expect(bottom).toContain('└');
+    expect(bottom).toContain('┘');
+  });
+});
+
+describe('renderDoubleFrame', () => {
+  it('creates a double-line frame', () => {
+    const lines = renderDoubleFrame(['blocker content']);
+    const stripped = lines.map(stripAnsi);
+    expect(stripped[0]).toContain('╔');
+    expect(stripped[0]).toContain('╗');
+    expect(stripped[stripped.length - 1]).toContain('╚');
+    expect(stripped[stripped.length - 1]).toContain('╝');
+  });
+
+  it('includes label in top border', () => {
+    const lines = renderDoubleFrame(['content'], 'BLOCKERS');
+    const stripped = lines.map(stripAnsi);
+    expect(stripped[0]).toContain('BLOCKERS');
+  });
+
+  it('uses double-line side borders', () => {
+    const lines = renderDoubleFrame(['inner']);
+    const stripped = lines.map(stripAnsi);
+    const inner = stripped.filter((l) => l.includes('║'));
+    expect(inner.length).toBeGreaterThan(0);
+    expect(inner.some((l) => l.includes('inner'))).toBe(true);
+  });
+});
+
+describe('renderPositionMarker', () => {
+  it('places a marker at the correct position', () => {
+    const result = stripAnsi(renderPositionMarker(0, 10));
+    expect(result[0]).toBe('█');
+    expect(result.length).toBe(10);
+  });
+
+  it('places marker at end for value 1.0', () => {
+    const result = stripAnsi(renderPositionMarker(1.0, 10));
+    expect(result[9]).toBe('█');
+  });
+
+  it('clamps values', () => {
+    const result = stripAnsi(renderPositionMarker(1.5, 10));
+    expect(result[9]).toBe('█');
+  });
+});
+
+describe('renderCalibrationLine', () => {
+  it('returns axis with claim and evidence markers', () => {
+    const lines = renderCalibrationLine(0.3, 0.7, 20);
+    expect(lines.length).toBe(2);
+    expect(lines[0]).toContain('◄');
+    expect(lines[0]).toContain('►');
+    expect(lines[0]).toContain('C');
+    expect(lines[0]).toContain('E');
+  });
+
+  it('labels show 0 and 1', () => {
+    const lines = renderCalibrationLine(0.5, 0.5, 20);
+    expect(lines[1]).toContain('0');
+    expect(lines[1]).toContain('1');
+  });
+});
+
+describe('renderReviewerHeader', () => {
+  it('includes rank, name, and coverage', () => {
+    const header = stripAnsi(renderReviewerHeader(1, 'bob', '2/2 verified', 50));
+    expect(header).toContain('1');
+    expect(header).toContain('bob');
+    expect(header).toContain('2/2 verified');
+    expect(header).toContain('───');
+  });
+});
+
+describe('renderInnerSeparator', () => {
+  it('renders a dim thin line', () => {
+    const sep = stripAnsi(renderInnerSeparator(10));
+    expect(sep).toBe('─'.repeat(10));
+  });
+});
+
+describe('renderDoubleBand', () => {
+  it('renders a double-line band', () => {
+    const band = renderDoubleBand(20);
+    expect(band).toBe('═'.repeat(20));
+  });
+});
+
+describe('isStale', () => {
+  it('returns false for null', () => {
+    expect(isStale(null)).toBe(false);
+  });
+
+  it('returns false for recent timestamps', () => {
+    expect(isStale(Date.now() - 1000)).toBe(false);
+  });
+
+  it('returns true for timestamps older than 60 days', () => {
+    const old = Date.now() - 61 * 24 * 60 * 60 * 1000;
+    expect(isStale(old)).toBe(true);
+  });
+});
+
+describe('stripAnsi', () => {
+  it('removes ANSI escape codes', () => {
+    expect(stripAnsi('\u001b[32mhello\u001b[39m')).toBe('hello');
+  });
+
+  it('preserves plain text', () => {
+    expect(stripAnsi('hello world')).toBe('hello world');
   });
 });

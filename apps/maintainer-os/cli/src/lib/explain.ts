@@ -5,8 +5,9 @@ import {
   colorForLevel,
   colorForLevelGradient,
   renderBar,
-  renderHeader,
-  renderSeparator,
+  renderFrame,
+  renderInnerSeparator,
+  renderCalibrationLine,
   formatConfidence,
   formatTimeAgo,
   computeConceptWidth,
@@ -63,84 +64,119 @@ export function buildExplanation(store: Store, personId: string, conceptId: stri
 export function formatExplanation(data: ExplanationData): string {
   const { state } = data;
   const color = colorForLevel(state.level);
-  const lines: string[] = [];
+  const contentLines: string[] = [];
 
-  lines.push(renderHeader('Explanation', `${data.person} → ${data.concept}`));
-  lines.push(renderSeparator());
-  lines.push(`  Level: ${color(state.level)} · Confidence: ${formatConfidence(state.confidence)}`);
+  // Level and confidence header
+  contentLines.push(`Level: ${color(state.level)}`);
   if (state.confidence !== state.decayedConfidence) {
-    lines.push(`  Decayed confidence: ${formatConfidence(state.decayedConfidence)}`);
+    contentLines.push(`Confidence: ${formatConfidence(state.confidence)} → ${formatConfidence(state.decayedConfidence)} (after decay)`);
+  } else {
+    contentLines.push(`Confidence: ${formatConfidence(state.confidence)}`);
   }
-  lines.push('');
 
   // Evidence chain
   if (state.verificationHistory.length > 0) {
-    lines.push(`  ${chalk.bold('Evidence chain:')}`);
+    contentLines.push('');
+    contentLines.push('═'.repeat(50));
+    contentLines.push('');
+    contentLines.push(chalk.bold('EVIDENCE'));
+
     for (const [i, event] of state.verificationHistory.entries()) {
-      if (i > 0) lines.push('');
-      lines.push(formatVerificationLine(i + 1, event));
+      contentLines.push('');
+      const date = new Date(event.timestamp).toISOString().slice(0, 10);
+      const resultColor = event.result === 'demonstrated' ? chalk.green : event.result === 'failed' ? chalk.red : chalk.yellow;
+      contentLines.push(`  ${i + 1} │ ${chalk.dim(date)} │ ${event.modality}`);
+      contentLines.push(`    │ ${' '.repeat(10)} │ ${resultColor(event.result)}`);
       if (event.context) {
-        lines.push(`       ${chalk.dim(`"${event.context}"`)}`);
+        contentLines.push(`    │`);
+        contentLines.push(`    │  ${chalk.dim(`"${event.context}"`)}`);
       }
     }
-    lines.push('');
   }
 
   // Claim history
   if (state.claimHistory.length > 0) {
-    lines.push(`  ${chalk.bold('Claims:')}`);
+    contentLines.push('');
+    contentLines.push(renderInnerSeparator());
+    contentLines.push('');
+    contentLines.push(chalk.bold('CLAIMS'));
+
     for (const claim of state.claimHistory) {
-      lines.push(formatClaimLine(claim));
+      contentLines.push('');
+      const date = new Date(claim.timestamp).toISOString().slice(0, 10);
+      contentLines.push(`  ${chalk.dim(date)} │ self-reported: ${formatConfidence(claim.selfReportedConfidence)}`);
+      if (claim.context) {
+        contentLines.push(`${' '.repeat(13)}│ ${chalk.dim(`"${claim.context}"`)}`);
+      }
     }
-    lines.push('');
   }
 
   // Contested explanation
   if (state.level === 'contested') {
-    lines.push(`  ${chalk.yellow('Conflicting evidence across modalities produces CONTESTED state.')}`);
-    lines.push('');
+    contentLines.push('');
+    contentLines.push(renderInnerSeparator());
+    contentLines.push('');
+    contentLines.push(chalk.redBright('Conflicting evidence across modalities produces CONTESTED state.'));
   }
 
   // Inference chain (what this concept was inferred from)
   if (state.inferredFrom.length > 0) {
-    lines.push(`  ${chalk.bold('Inferred from:')}`);
+    contentLines.push('');
+    contentLines.push(renderInnerSeparator());
+    contentLines.push('');
+    contentLines.push(chalk.bold('INFERRED FROM'));
     for (const src of state.inferredFrom) {
-      lines.push(`    → ${src}`);
+      contentLines.push(`  → ${src}`);
     }
-    lines.push('');
   }
 
   // Downstream inferences from this concept
   if (data.inferences.length > 0) {
+    contentLines.push('');
+    contentLines.push(renderInnerSeparator());
+    contentLines.push('');
+    contentLines.push(chalk.bold('DOWNSTREAM'));
+
     const infWidth = computeConceptWidth(data.inferences.map((inf) => inf.conceptId));
-    lines.push(`  ${chalk.bold('Inferences from this concept:')}`);
     for (const inf of data.inferences) {
+      contentLines.push('');
       const infColor = colorForLevelGradient(inf.level, inf.decayedConfidence);
       const bar = renderBar(inf.decayedConfidence, BAR_WIDTH, infColor);
       const conf = formatConfidence(inf.decayedConfidence);
-      lines.push(`    → ${infColor(padName(inf.conceptId, infWidth))} ${bar} ${conf}   ${inf.edgeType} (${inf.inferenceStrength})`);
+      contentLines.push(`  → ${infColor(padName(inf.conceptId, infWidth))} ${bar}  ${conf}`);
+      contentLines.push(`    ${chalk.dim(`inferred via ${inf.edgeType} (weight: ${inf.inferenceStrength})`)}`);
     }
-    lines.push('');
   }
 
   // Calibration gap
   if (state.calibrationGap !== null) {
-    lines.push(`  ${chalk.dim(`Calibration gap: ${state.calibrationGap > 0 ? '+' : ''}${state.calibrationGap.toFixed(2)} (${state.calibrationGap > 0 ? 'overclaiming' : 'underclaiming'})`)}`);
-    lines.push('');
+    contentLines.push('');
+    contentLines.push(renderInnerSeparator());
+    contentLines.push('');
+    contentLines.push(chalk.bold('CALIBRATION'));
+    contentLines.push('');
+
+    const claimConf = state.claimHistory.length > 0
+      ? state.claimHistory[state.claimHistory.length - 1]!.selfReportedConfidence
+      : 0;
+    const evidenceConf = state.confidence;
+
+    contentLines.push(`  Claim: ${formatConfidence(claimConf)}`);
+    contentLines.push(`  Evidence: ${formatConfidence(evidenceConf)}`);
+    const gapSign = state.calibrationGap > 0 ? '+' : '';
+    const gapLabel = state.calibrationGap > 0 ? 'overclaiming' : 'underclaiming';
+    contentLines.push(`  Gap: ${gapSign}${state.calibrationGap.toFixed(2)} (${gapLabel})`);
+
+    const calLines = renderCalibrationLine(claimConf, evidenceConf);
+    for (const cl of calLines) {
+      contentLines.push(`       ${chalk.dim(cl)}`);
+    }
   }
 
-  return lines.join('\n').trimEnd();
-}
+  contentLines.push('');
 
-function formatVerificationLine(num: number, event: VerificationEvent): string {
-  const date = new Date(event.timestamp).toISOString().slice(0, 10);
-  const resultColor = event.result === 'demonstrated' ? chalk.green : event.result === 'failed' ? chalk.red : chalk.yellow;
-  return `    ${num}. ${chalk.dim(`[${date}]`)} ${event.modality} → ${resultColor(event.result)}`;
-}
-
-function formatClaimLine(claim: ClaimEvent): string {
-  const date = new Date(claim.timestamp).toISOString().slice(0, 10);
-  return `    ${chalk.dim(`[${date}]`)} self-reported confidence: ${formatConfidence(claim.selfReportedConfidence)} ${chalk.dim(`"${claim.context}"`)}`;
+  const frame = renderFrame('Explanation', `${data.person} → ${data.concept}`, contentLines);
+  return frame.join('\n');
 }
 
 export function explanationToJson(data: ExplanationData): unknown {

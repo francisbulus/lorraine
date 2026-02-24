@@ -9,8 +9,10 @@ import {
   iconForLevelGradient,
   colorForLevelGradient,
   renderBar,
-  renderHeader,
-  renderSeparator,
+  renderFrame,
+  renderDoubleFrame,
+  renderInnerSeparator,
+  renderDoubleBand,
   formatConfidence,
   computeConceptWidth,
   padName,
@@ -75,42 +77,101 @@ export function registerReadyCommand(program: Command): void {
 function printReadinessTable(result: ReadinessResult): void {
   const conceptWidth = computeConceptWidth(result.gates.map((g) => g.requirement.concept));
 
-  console.log(renderHeader('Readiness', `${result.person} → ${result.bundle}`));
-  console.log(renderSeparator());
-  console.log('');
+  const passing = result.gates.filter((g) => g.passed);
+  const blocking = result.gates.filter((g) => !g.passed);
 
-  for (const gate of result.gates) {
-    const passed = gate.passed;
-    const color = passed
-      ? colorForLevelGradient(gate.state.level, gate.state.decayedConfidence)
-      : chalk.red;
-    const icon = passed
-      ? iconForLevelGradient(gate.state.level, gate.state.decayedConfidence)
-      : chalk.red('✗');
-    const name = color(padName(gate.requirement.concept, conceptWidth));
-    const bar = renderBar(gate.state.decayedConfidence, BAR_WIDTH, color);
-    const conf = formatConfidence(gate.state.decayedConfidence);
-    const status = passed ? chalk.green('PASS') : chalk.red('BLOCK');
-    const gateType = gate.requirement.minLevel === 'verified' ? 'hard' : 'soft';
-    const gateLabel = passed
-      ? chalk.dim(`[${gateType}]`)
-      : chalk.dim(`[${gateType} · ${gate.state.level}]`);
+  // Build content for the main frame
+  const contentLines: string[] = [];
 
-    console.log(`    ${icon} ${name} ${bar} ${conf}  ${status}    ${gateLabel}`);
-  }
+  // GATES section (passing)
+  if (passing.length > 0) {
+    contentLines.push(chalk.bold('GATES'));
 
-  console.log('');
-  console.log(renderSeparator());
-  if (result.passed) {
-    console.log(renderHeader('Result', `${chalk.green.bold('READY')} · ${result.passedCount} of ${result.totalCount} met`));
-  } else {
-    console.log(renderHeader('Result', `${chalk.red.bold('NOT READY')} · ${result.passedCount} of ${result.totalCount} met`));
-    console.log('');
-    console.log(`  ${chalk.bold('Next steps:')}`);
-    for (const gate of result.gates) {
-      if (!gate.passed) {
-        console.log(`    mos challenge --person ${result.person} --concept ${gate.requirement.concept}`);
-      }
+    for (const gate of passing) {
+      contentLines.push('');
+      const color = colorForLevelGradient(gate.state.level, gate.state.decayedConfidence);
+      const icon = iconForLevelGradient(gate.state.level, gate.state.decayedConfidence);
+      const name = color(padName(gate.requirement.concept, conceptWidth));
+      const bar = renderBar(gate.state.decayedConfidence, BAR_WIDTH, color);
+      const conf = formatConfidence(gate.state.decayedConfidence);
+      contentLines.push(`  ${icon} ${name} ${bar}  ${conf}   ${chalk.green('PASS')}`);
+      const gateType = gate.requirement.minLevel === 'verified' ? 'hard' : 'soft';
+      contentLines.push(`    ${chalk.dim(`${gateType} gate · ${gate.state.level}`)}`);
     }
   }
+
+  if (passing.length > 0 && blocking.length > 0) {
+    contentLines.push('');
+    contentLines.push(renderInnerSeparator());
+  }
+
+  // Close the main frame before blockers if we have them, or include verdict
+  if (blocking.length > 0) {
+    contentLines.push('');
+
+    // Render the frame up to here, then the double-frame blockers break out
+    const frameLines = renderFrame('Readiness', `${result.person} → ${result.bundle}`, contentLines);
+    for (const line of frameLines.slice(0, -1)) { // omit closing border
+      console.log(line);
+    }
+
+    // BLOCKERS double-frame
+    const blockerLines: string[] = [];
+    for (const gate of blocking) {
+      const name = chalk.red(padName(gate.requirement.concept, conceptWidth));
+      const bar = renderBar(gate.state.decayedConfidence, BAR_WIDTH, chalk.red);
+      const conf = formatConfidence(gate.state.decayedConfidence);
+      blockerLines.push(`  ${chalk.red('✗')} ${name} ${bar}  ${conf}   ${chalk.red('BLOCK')}`);
+      const gateType = gate.requirement.minLevel === 'verified' ? 'hard' : 'soft';
+      blockerLines.push(`    ${chalk.dim(`${gateType} gate · ${gate.state.level}`)}`);
+      blockerLines.push('');
+    }
+    const doubleLines = renderDoubleFrame(blockerLines, 'BLOCKERS');
+    for (const line of doubleLines) {
+      console.log(line);
+    }
+
+    // Verdict and next steps inside resumed frame
+    const closingLines: string[] = [];
+    closingLines.push('');
+    closingLines.push(renderDoubleBand(50));
+    const verdictLabel = chalk.redBright.bold('NOT READY');
+    closingLines.push(`VERDICT: ${verdictLabel}${' '.repeat(20)}${result.passedCount} / ${result.totalCount} met`);
+    closingLines.push(renderDoubleBand(50));
+    closingLines.push('');
+    closingLines.push(chalk.bold('Next:'));
+    for (const gate of blocking) {
+      closingLines.push(`  → mos challenge --person ${result.person}`);
+      closingLines.push(`        --concept ${gate.requirement.concept}`);
+    }
+    closingLines.push('');
+
+    const closingFrame = renderFrame('', '', closingLines);
+    // Only print the content lines (skip the top border, just close it)
+    // Actually, resume with │ lines and close
+    for (const line of closingLines) {
+      const visualLen = stripAnsiLocal(line).length;
+      const innerWidth = 58;
+      const padding = Math.max(0, innerWidth - visualLen - 2);
+      console.log(`  │  ${line}${' '.repeat(padding)}│`);
+    }
+    console.log(`  └${'─'.repeat(60)}┘`);
+  } else {
+    // All passing - simple frame with verdict
+    contentLines.push('');
+    contentLines.push(renderDoubleBand(50));
+    const verdictLabel = chalk.greenBright.bold('READY');
+    contentLines.push(`VERDICT: ${verdictLabel}${' '.repeat(23)}${result.passedCount} / ${result.totalCount} met`);
+    contentLines.push(renderDoubleBand(50));
+    contentLines.push('');
+
+    const frame = renderFrame('Readiness', `${result.person} → ${result.bundle}`, contentLines);
+    for (const line of frame) {
+      console.log(line);
+    }
+  }
+}
+
+function stripAnsiLocal(str: string): string {
+  return str.replace(/\u001b\[[0-9;]*m/g, '');
 }

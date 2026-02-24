@@ -8,12 +8,14 @@ import type { ReviewerScore } from '../lib/reviewer-scoring.js';
 import {
   colorForLevelGradient,
   renderBar,
-  renderHeader,
-  renderSeparator,
+  renderFrame,
+  renderInnerSeparator,
+  renderReviewerHeader,
   formatConfidence,
   formatTimeAgo,
   computeConceptWidth,
   padName,
+  isStale,
   BAR_WIDTH,
 } from '../lib/formatters.js';
 
@@ -62,36 +64,52 @@ export function registerReviewersCommand(program: Command): void {
 
 function printReviewerTable(conceptIds: string[], scores: ReviewerScore[]): void {
   const conceptWidth = computeConceptWidth(conceptIds);
-
-  console.log(renderHeader('Reviewers', conceptIds.join(', ')));
-  console.log(renderSeparator());
-  console.log('');
+  const contentLines: string[] = [];
 
   for (const [i, score] of scores.entries()) {
-    const coverage = [];
-    if (score.verifiedCount > 0) coverage.push(`${score.verifiedCount}/${conceptIds.length} verified`);
-    if (score.inferredCount > 0) coverage.push(`${score.inferredCount}/${conceptIds.length} inferred`);
-    const coverageStr = coverage.join(', ');
+    if (i > 0) {
+      contentLines.push('');
+      contentLines.push(renderInnerSeparator());
+    }
+    contentLines.push('');
 
-    // Right-align coverage on the name line
-    const nameStr = `${i + 1}. ${score.personId}`;
-    const totalWidth = 52;
-    const padding = Math.max(1, totalWidth - nameStr.length - coverageStr.length);
-    console.log(`  ${chalk.bold(nameStr)}${' '.repeat(padding)}${chalk.dim(coverageStr)}`);
+    // Coverage summary
+    const coverage = buildCoverageString(score, conceptIds.length);
+    const hasContested = score.conceptScores.some((cs) => cs.level === 'contested');
+    const warning = hasContested ? ' ⚠' : '';
+    const headerWidth = 50;
+    contentLines.push(renderReviewerHeader(i + 1, score.personId, coverage + warning, headerWidth));
 
     for (const cs of score.conceptScores) {
+      contentLines.push('');
       const color = colorForLevelGradient(cs.level, cs.decayedConfidence);
       const bar = renderBar(cs.decayedConfidence, BAR_WIDTH, color);
       const conf = formatConfidence(cs.decayedConfidence);
+      contentLines.push(`  ${color(padName(cs.conceptId, conceptWidth))} ${bar}  ${conf}`);
+
+      // Detail line
       const time = cs.lastVerified ? formatTimeAgo(cs.lastVerified) : '';
-      const levelTime = time ? `${cs.level} · ${time}` : cs.level;
-      console.log(`     ${color(padName(cs.conceptId, conceptWidth))} ${bar} ${conf}   ${chalk.dim(levelTime)}`);
+      const staleTag = cs.lastVerified && isStale(cs.lastVerified) ? ' (stale)' : '';
+      const contestedTag = cs.level === 'contested' ? ' ⚡' : '';
+      const detail = [cs.level, time].filter(Boolean).join(' · ') + staleTag + contestedTag;
+      contentLines.push(`    ${chalk.dim(detail)}`);
     }
-    console.log('');
   }
 
-  console.log(renderSeparator());
-  console.log(`  ${chalk.dim('Detail: mos why --person <name> --concept <concept>')}`);
+  contentLines.push('');
+
+  const footer = 'Detail: mos why --person <name> --concept <c>';
+  const frame = renderFrame('Reviewers', conceptIds.join(', '), contentLines, footer);
+  for (const line of frame) {
+    console.log(line);
+  }
+}
+
+function buildCoverageString(score: ReviewerScore, total: number): string {
+  const parts: string[] = [];
+  if (score.verifiedCount > 0) parts.push(`${score.verifiedCount}/${total} verified`);
+  if (score.inferredCount > 0) parts.push(`${score.inferredCount}/${total} inferred`);
+  return parts.join(', ') || 'no coverage';
 }
 
 function scoreToJson(score: ReviewerScore): unknown {

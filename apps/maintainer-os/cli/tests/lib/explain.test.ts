@@ -100,7 +100,7 @@ describe('formatExplanation', () => {
       const output = formatExplanation(data);
       expect(output).toContain('Explanation');
       expect(output).toContain('rollback-strategy');
-      expect(output).toContain('Evidence chain');
+      expect(output).toContain('EVIDENCE');
       expect(output).toContain('demonstrated');
     } finally {
       store.close();

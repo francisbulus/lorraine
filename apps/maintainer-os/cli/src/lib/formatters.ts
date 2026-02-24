@@ -4,6 +4,7 @@ import type { TrustLevel, TrustState, Modality } from '../engine.js';
 // Layout constants
 export const CONCEPT_COL = 24;
 export const BAR_WIDTH = 10;
+export const FRAME_WIDTH = 58;
 
 // Raw icon characters for each trust level
 export const LEVEL_ICONS: Record<TrustLevel, string> = {
@@ -60,6 +61,170 @@ export function renderBar(value: number, width: number = BAR_WIDTH, colorFn?: ch
   const color = colorFn ?? chalk.green;
   return color('█'.repeat(filled)) + chalk.dim('░'.repeat(empty));
 }
+
+// --- Frame rendering ---
+
+export function renderFrame(title: string, subject: string, contentLines: string[], footer?: string): string[] {
+  const innerWidth = computeFrameWidth(title, subject, contentLines, footer);
+  const lines: string[] = [];
+
+  // Top border: ┌─ Title ─────────────── subject ─┐
+  const topLabel = `─ ${title} `;
+  const topSubject = ` ${subject} ─`;
+  const topFill = Math.max(0, innerWidth - topLabel.length - topSubject.length);
+  lines.push(`  ┌${topLabel}${'─'.repeat(topFill)}${topSubject}┐`);
+
+  // Blank line after top border
+  lines.push(frameLine('', innerWidth));
+
+  // Content lines
+  for (const line of contentLines) {
+    lines.push(frameLine(line, innerWidth));
+  }
+
+  // Bottom border
+  if (footer) {
+    const bottomFill = Math.max(0, innerWidth - footer.length - 2);
+    lines.push(`  └${'─'.repeat(bottomFill)} ${footer} ─┘`);
+  } else {
+    lines.push(`  └${'─'.repeat(innerWidth)}┘`);
+  }
+
+  return lines;
+}
+
+export function renderDoubleFrame(contentLines: string[], label?: string): string[] {
+  const maxContent = maxVisualWidth(contentLines);
+  const innerWidth = Math.max(FRAME_WIDTH, maxContent + 4);
+  const lines: string[] = [];
+
+  if (label) {
+    const topLabel = `══ ${label} `;
+    const topFill = Math.max(0, innerWidth - topLabel.length);
+    lines.push(`  ╔${topLabel}${'═'.repeat(topFill)}╗`);
+  } else {
+    lines.push(`  ╔${'═'.repeat(innerWidth)}╗`);
+  }
+
+  lines.push(doubleFrameLine('', innerWidth));
+
+  for (const line of contentLines) {
+    lines.push(doubleFrameLine(line, innerWidth));
+  }
+
+  lines.push(doubleFrameLine('', innerWidth));
+  lines.push(`  ╚${'═'.repeat(innerWidth)}╝`);
+
+  return lines;
+}
+
+function frameLine(content: string, innerWidth: number): string {
+  const visualLen = stripAnsi(content).length;
+  const padding = Math.max(0, innerWidth - visualLen - 2);
+  return `  │  ${content}${' '.repeat(padding)}│`;
+}
+
+function doubleFrameLine(content: string, innerWidth: number): string {
+  const visualLen = stripAnsi(content).length;
+  const padding = Math.max(0, innerWidth - visualLen - 2);
+  return `  ║  ${content}${' '.repeat(padding)}║`;
+}
+
+function computeFrameWidth(title: string, subject: string, contentLines: string[], footer?: string): number {
+  const titleWidth = title.length + subject.length + 6; // ─ Title ─── subject ─
+  const footerWidth = footer ? footer.length + 4 : 0;
+  const maxContent = maxVisualWidth(contentLines) + 4; // 2 padding each side
+  return Math.max(FRAME_WIDTH, titleWidth, footerWidth, maxContent);
+}
+
+function maxVisualWidth(lines: string[]): number {
+  let max = 0;
+  for (const line of lines) {
+    const len = stripAnsi(line).length;
+    if (len > max) max = len;
+  }
+  return max;
+}
+
+export function stripAnsi(str: string): string {
+  return str.replace(/\u001b\[[0-9;]*m/g, '');
+}
+
+// --- Position marker for scalar values ---
+
+export function renderPositionMarker(value: number, width: number = 40): string {
+  const clamped = Math.max(0, Math.min(1, value));
+  const pos = Math.round(clamped * (width - 1));
+  const chars = '░'.repeat(width).split('');
+  chars[pos] = '█';
+  return chalk.dim(chars.join(''));
+}
+
+// --- Calibration number line ---
+
+export function renderCalibrationLine(claim: number, evidence: number, width: number = 30): string[] {
+  const lines: string[] = [];
+  const clampClaim = Math.max(0, Math.min(1, claim));
+  const clampEvidence = Math.max(0, Math.min(1, evidence));
+  const claimPos = Math.round(clampClaim * (width - 1));
+  const evidencePos = Math.round(clampEvidence * (width - 1));
+
+  // Build the axis line
+  const axis = '─'.repeat(width);
+  const axisChars = axis.split('');
+
+  // Place markers (evidence overwrites claim if same position)
+  const markers = new Map<number, string>();
+  markers.set(claimPos, 'C');
+  markers.set(evidencePos, 'E');
+
+  const line = axisChars.map((c, i) => {
+    if (markers.has(i)) return markers.get(i)!;
+    return c;
+  }).join('');
+
+  lines.push(`◄${line}►`);
+
+  // Labels below
+  const labelLine = ' '.repeat(width + 2).split('');
+  // Place "0" at start, "1" at end
+  labelLine[0] = '0';
+  labelLine[width + 1] = '1';
+  lines.push(labelLine.join(''));
+
+  return lines;
+}
+
+// --- Reviewer header shelf ---
+
+export function renderReviewerHeader(rank: number, name: string, coverage: string, width: number): string {
+  const prefix = `${rank} ─── ${name} `;
+  const suffix = ` ${coverage}`;
+  const fill = Math.max(1, width - prefix.length - suffix.length);
+  return `${chalk.bold(String(rank))} ${chalk.dim('───')} ${chalk.bold(name)} ${chalk.dim('─'.repeat(fill))}${chalk.dim(suffix)}`;
+}
+
+// --- Inline section divider inside a frame ---
+
+export function renderInnerSeparator(width: number = 45): string {
+  return chalk.dim('─'.repeat(width));
+}
+
+// --- Double-line emphasis band ---
+
+export function renderDoubleBand(width: number = 50): string {
+  return '═'.repeat(width);
+}
+
+// --- Verdict line ---
+
+export function renderVerdict(passed: boolean, passedCount: number, totalCount: number): string {
+  const label = passed ? chalk.greenBright.bold('READY') : chalk.redBright.bold('NOT READY');
+  const ratio = `${passedCount} / ${totalCount} met`;
+  return `VERDICT: ${stripAnsi(label) === 'READY' ? '' : ''}${label}${' '.repeat(Math.max(1, 30 - stripAnsi(`VERDICT: ${passed ? 'READY' : 'NOT READY'}`).length))}${ratio}`;
+}
+
+// --- Legacy functions preserved for compatibility ---
 
 export function renderHeader(label: string, value: string): string {
   return `  ${chalk.bold(label)} · ${value}`;
@@ -162,4 +327,9 @@ export function formatCalibrationSummary(states: TrustState[]): string | null {
   const stalePercent = states.length > 0 ? Math.round((staleCount / states.length) * 100) : 0;
 
   return `Calibration: ${accuracy}% prediction accuracy, ${stalePercent}% stale`;
+}
+
+export function isStale(timestamp: number | null): boolean {
+  if (!timestamp) return false;
+  return (Date.now() - timestamp) > 60 * 24 * 60 * 60 * 1000;
 }
