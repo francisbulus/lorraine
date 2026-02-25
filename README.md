@@ -114,6 +114,7 @@ A CLI tool for engineering teams that answers "who actually understands this cod
 | [`docs/why-llms.md`](docs/why-llms.md) | Why LLMs are architecturally necessary for rich interaction |
 | [`docs/auditability.md`](docs/auditability.md) | What the architecture lets you answer for free |
 | [`docs/building-on-lorraine.md`](docs/building-on-lorraine.md) | End-to-end example of building an application on the framework |
+| [`docs/derived-state-consistency.md`](docs/derived-state-consistency.md) | How materialized trust state stays consistent with the event log |
 
 ## Named after
 
