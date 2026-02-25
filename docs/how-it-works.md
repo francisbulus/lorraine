@@ -121,7 +121,7 @@ This is where Lorraine's opinions live. The computation layer takes raw events f
 
 ### 3.1 Derivation
 
-Trust state is never stored. Every time trust state is requested, the computation layer recomputes it from the event log.
+Trust state is derived from the event log. Implementations can materialize derived trust state for performance, but the event log remains the source of truth and trust can always be recomputed.
 
 For a given person and concept, derivation looks at:
 - All verification events, ordered by time
@@ -235,7 +235,7 @@ The computation layer preserves the tension. It's up to the application to decid
 
 ## 4. Query Layer
 
-The query layer is how applications ask questions about trust data. Every query runs through the computation layer. There are no pre-computed answers sitting in a table. Queries produce derived reads, not stored reads.
+The query layer is how applications ask questions about trust data. Every query runs through the computation layer. Implementations can read materialized derived state and compute time-sensitive values like decay at read time.
 
 **`getTrustState(personId, conceptId)`**: what does this person know about this concept?
 

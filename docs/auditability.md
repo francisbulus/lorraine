@@ -9,7 +9,7 @@
 
 Lorraine is auditable and self-aware by construction. This is not a feature. It's a structural consequence of two framework invariants:
 
-- **Invariant 6:** Trust state is derived from events, not stored directly. Every trust claim is recomputable from the event log.
+- **Invariant 6:** Trust state is derived from events, not manually set. Implementations can materialize derived state, but every trust claim is still recomputable from the event log.
 - **Invariant 3:** Every trust claim is transparent and challengeable. The person being modeled can always ask "why" and get a traceable answer.
 
 An event-sourced system with mandatory provenance, no manual overrides, and self-calibration produces three properties for free:

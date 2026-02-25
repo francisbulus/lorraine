@@ -245,7 +245,7 @@ The data layer is defined by a store interface, not a specific database. Any dat
 
 What trust data means. This is where Lorraine's opinions live.
 
-**Derivation**: trust state is never stored directly. Every time trust state is requested, it is recomputed from the event log. There is no trust score sitting in a row somewhere. There is a function that takes events and produces a score.
+**Derivation**: trust state is derived from the event log. Implementations can materialize derived trust state for performance. The event log remains the source of truth, and trust can always be recomputed from events.
 
 **Propagation**: a verification event on one concept ripples across the graph. Five hardcoded rules govern how: verification never propagates as verification (only as inference), inference attenuates with distance, failure propagates aggressively, cross-modality compounds, and time decays trust. These rules cannot be configured. They are integrity constraints.
 
@@ -259,7 +259,7 @@ See `docs/how-it-works.md` for concrete examples of each operation.
 
 ### 5.4 Query
 
-How you ask questions about trust data. Every query runs through the computation layer. Derived reads, not stored reads.
+How you ask questions about trust data. Every query runs through the computation layer. Implementations can read materialized derived state and compute time-sensitive values like decay at read time.
 
 - `getTrustState`: what does this person know about this concept?
 - `getBulkTrustState`: what do they know across many concepts?

@@ -24,9 +24,9 @@ The framework is domain-agnostic. You bring a domain (what there is to know), a 
 
 - Propagation rules: verification never propagates as verification, only as inference. Inference attenuates with distance. Failure propagates aggressively. Cross-modality compounds. Time decays trust.
 - These rules are hardcoded. They are epistemic integrity constraints, not tunable parameters. If they were configurable, a bad configuration could inflate trust scores.
-- Trust state is always derived from events through these rules. Never stored directly. Always recomputable.
+- Trust state is always derived from events through these rules. Implementations can materialize that derived state for fast reads, but the event log remains the source of truth and trust is always recomputable.
 
-**Query**: how you ask questions about trust data. Every query recomputes from events through the computation layer. Derived reads, not stored reads.
+**Query**: how you ask questions about trust data. Queries read derived trust through the computation layer. Implementations can use materialized derived state and compute time-sensitive values like decay at read time.
 
 - What does this person know about X? (`getTrustState`)
 - What do they know across these concepts? (`getBulkTrustState`)
@@ -43,7 +43,7 @@ These hold in every context. Non-negotiable.
 3. **Transparent and challengeable**: every trust claim traces to evidence, the person can always ask why
 4. **Failure is the most informative event**: visible, recorded, diagnostic
 5. **Never manipulates verification to inflate trust**: no leading questions, no score-boosting
-6. **Trust state is derived, not stored**: recomputable from events, no manual overrides, corrections via retraction
+6. **Trust state is derived, not manually set**: recomputable from events, materialized snapshots are allowed, corrections happen via retraction
 
 ## How it fits
 
