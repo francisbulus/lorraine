@@ -3,6 +3,7 @@
 
 import type { LoadConceptsInput, LoadConceptsResult, EdgeType } from '../types.js';
 import type { Store } from '../store/interface.js';
+import { getProjectionScope } from '../trust/projector.js';
 
 export function loadConcepts(
   store: Store,
@@ -54,6 +55,29 @@ export function loadConcepts(
       inferenceStrength: edge.inferenceStrength,
     });
     edgesCreated++;
+  }
+
+  // Graph structure changed. Bump graph version and queue rebuild scopes.
+  store.bumpGraphVersion();
+
+  const people = store.getPeopleWithEvents();
+  const minEventSeq = store.getCurrentEventSeq();
+  const createdAt = Date.now();
+
+  for (const personId of people) {
+    const conceptIds = store.getConceptIdsWithEvents(personId);
+    for (const conceptId of conceptIds) {
+      const scope = getProjectionScope(store, 'component', personId, conceptId);
+      store.enqueueProjectionJob({
+        scopeKey: scope.scopeKey,
+        scopeType: 'component',
+        personId,
+        conceptId,
+        reason: 'graph_changed',
+        minEventSeq,
+        createdAt,
+      });
+    }
   }
 
   return { loaded, edgesCreated, errors };

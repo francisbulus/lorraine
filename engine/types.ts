@@ -42,6 +42,7 @@ export type VerificationResult = 'demonstrated' | 'failed' | 'partial';
 
 export interface VerificationEvent {
   id: string;
+  eventSeq?: number;
   personId: string;
   conceptId: string;
   modality: Modality;
@@ -55,6 +56,7 @@ export interface VerificationEvent {
 
 export interface ClaimEvent {
   id: string;
+  eventSeq?: number;
   personId: string;
   conceptId: string;
   selfReportedConfidence: number; // 0.0 – 1.0
@@ -79,6 +81,25 @@ export interface TrustState {
   inferredFrom: string[]; // concept IDs that led to this inference
   decayedConfidence: number; // confidence adjusted for time
   calibrationGap: number | null; // latest claim confidence minus evidence confidence
+  cacheStatus?: TrustCacheStatus;
+}
+
+export interface TrustCacheStatus {
+  consistencyMode: 'fast' | 'strict';
+  stale: boolean;
+  staleReasons: string[];
+  snapshotEventSeq: number | null;
+  scopeEventSeq: number;
+  snapshotVersions: {
+    graphVersion: number | null;
+    modelVersion: number | null;
+    modalityTaxonomyVersion: number | null;
+  };
+  currentVersions: {
+    graphVersion: number;
+    modelVersion: number;
+    modalityTaxonomyVersion: number;
+  };
 }
 
 // --- Graph ---
@@ -218,3 +239,9 @@ export const PROPAGATION_THRESHOLD = 0.05;
 
 // Cross-modality bonus: each additional modality boosts confidence by this factor.
 export const CROSS_MODALITY_CONFIDENCE_BONUS = 0.1;
+
+// Snapshot logic version. Bump when trust computation constants or rules change.
+export const TRUST_MODEL_VERSION = 1;
+
+// Modality taxonomy version. Bump on modality renames or reclassification.
+export const MODALITY_TAXONOMY_VERSION = 1;

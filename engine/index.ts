@@ -8,6 +8,7 @@ export type {
   ClaimEvent,
   TrustLevel,
   TrustState,
+  TrustCacheStatus,
   EdgeType,
   ConceptNode,
   RelationshipEdge,
@@ -34,9 +35,17 @@ export {
   FAILURE_PROPAGATION_MULTIPLIER,
   PROPAGATION_THRESHOLD,
   CROSS_MODALITY_CONFIDENCE_BONUS,
+  TRUST_MODEL_VERSION,
+  MODALITY_TAXONOMY_VERSION,
 } from './types.js';
 
-export type { Store, StoredTrustState, StoredRetraction } from './store/interface.js';
+export type {
+  Store,
+  StoredTrustState,
+  StoredRetraction,
+  StoredProjectionJob,
+  VersionMetadata,
+} from './store/interface.js';
 export { createSQLiteStore } from './store/sqlite.js';
 
 export { createNode, getNode, getAllNodes, getDownstreamDependents } from './graph/nodes.js';
@@ -57,6 +66,21 @@ export type { GetTrustStateInput, GetBulkTrustStateInput } from './trust/query.j
 
 export { propagateTrust } from './trust/propagate.js';
 export type { PropagateTrustInput } from './trust/propagate.js';
+
+export {
+  projectScope,
+  getScopeFreshness,
+  getProjectionScope,
+  getConnectedComponentConceptIds,
+  buildScopeKey,
+} from './trust/projector.js';
+export type {
+  ProjectionScopeType,
+  ProjectionScope,
+  ScopeFreshness,
+  ProjectScopeInput,
+  ProjectScopeResult,
+} from './trust/projector.js';
 
 export { decayTrust, computeDecayedConfidence, computeHalfLife } from './trust/decay.js';
 export type { DecayTrustInput } from './trust/decay.js';

@@ -41,8 +41,9 @@ describe('trust propagation', () => {
       verificationEvent: event,
     });
 
-    // At least concept B should be affected (direct neighbor).
-    expect(results.length).toBeGreaterThan(0);
+    // recordVerification already triggers projector propagation.
+    // Manual propagateTrust should be idempotent when scope is current.
+    expect(results.length).toBe(0);
 
     // Check concept B — must be inferred, NEVER verified.
     const bState = getTrustState(store, {

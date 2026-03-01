@@ -48,7 +48,7 @@ describe('getBulkTrustState', () => {
     expect(results[1]!.level).toBe('verified');
   });
 
-  it('returns all concepts with trust state when conceptIds is omitted', () => {
+  it('returns all materialized states when conceptIds is omitted', () => {
     store = createTestGraph();
     const now = Date.now();
 
@@ -75,8 +75,8 @@ describe('getBulkTrustState', () => {
       asOfTimestamp: now,
     });
 
-    // Should include A and C (the ones with trust state).
-    expect(results.length).toBe(2);
+    // Projection now materializes inferred downstream states as well.
+    expect(results.length).toBe(5);
     const ids = results.map(r => r.conceptId);
     expect(ids).toContain(CONCEPTS.A.id);
     expect(ids).toContain(CONCEPTS.C.id);

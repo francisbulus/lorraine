@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { recordVerification, recordClaim, propagateTrust } from '../engine.js';
+import { recordVerification, recordClaim } from '../engine.js';
 import type { Store, Modality, VerificationResult } from '../engine.js';
 
 const VALID_MODALITIES = new Set([
@@ -92,7 +92,7 @@ function ingestEvents(store: Store, events: RawEvent[]): IngestResult {
         result.claims++;
       } else {
         const ts = event.timestamp ? new Date(event.timestamp).getTime() : undefined;
-        const verificationResult = recordVerification(store, {
+        recordVerification(store, {
           personId: event.personId!,
           conceptId: event.conceptId!,
           modality: event.modality as Modality,
@@ -100,21 +100,6 @@ function ingestEvents(store: Store, events: RawEvent[]): IngestResult {
           context: event.context ?? '',
           source: (event.source as 'internal' | 'external') ?? 'external',
           timestamp: ts,
-        });
-
-        propagateTrust(store, {
-          personId: event.personId!,
-          sourceConceptId: event.conceptId!,
-          verificationEvent: {
-            id: `ingest_${i}`,
-            personId: event.personId!,
-            conceptId: event.conceptId!,
-            modality: event.modality as Modality,
-            result: event.result as VerificationResult,
-            context: event.context ?? '',
-            source: (event.source as 'internal' | 'external') ?? 'external',
-            timestamp: ts ?? Date.now(),
-          },
         });
 
         result.verifications++;
